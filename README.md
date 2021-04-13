@@ -1,12 +1,9 @@
 
-
-
-
-# Deno in 2 hours
+![](https://github.com/mayankchoubey/deno-in-2-hours/blob/ebbba967ddd3abd2593069bc794c70ab21fbc3a8/deno%20in%202%20hours%20-%20cover.png)
 
 > Learn all about Deno in just 2 hours
 
-All the code is shown for async calls wherever the function is available in both async and sync variants. Sync calls are mentioned wherever they are available.
+> All the code is shown for async calls wherever the function is available in both async and sync variants. Sync calls are mentioned wherever they are available.
 
 ## Introduction
 Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses V8 and is built in Rust. Deno is a complete toolchain that ships as a single executable. It runs in a sandbox and supports Typescript out the box. Deno 1.0 was made generally available in May'2020. 
