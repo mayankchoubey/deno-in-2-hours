@@ -111,54 +111,16 @@ Deno.execPath();
 ## Permissions
 Deno runs in a sandboxed environment. Unless enabled, there is no file, network, environment, or child process access. The permissions can be enabled through `--allow-XXX` command-line option. A `PermissionDenied` error would be raised at runtime if the user program tries to access a resource outside the sandbox.
 
+|Permission Flag|Type|Description  |Examples|
+|--|--|--|--|
+|`--allow-all`  |Boolean|Enables all access (no sandboxing)  |`deno run --allow-all app.ts`
+|`--allow-read`|List|Recurisvely enables read access to all (if list is empty) or given list of paths|`deno run --allow-read` app.ts or `deno run --allow-read=/var/,/tmp,/datastore
+|`--allow-write`|List|Recurisvely enables write access to all (if list is empty) or given list of paths|`deno run --allow-write` app.ts or `deno run --allow-write=/var/,/tmp,/datastore
+|`--allow-net`|List|Enables access to all (if list is empty) or given networks|`deno run --allow-net app.ts` or `deno run --allow-net=10.1.1.0,api.abc.com,api.xyz.com,internal.system.com app.ts`
+|`--allow-env`|List|Enables access to all (if list is empty) or given environment variables|`deno run --allow-env app.ts` or `deno run --allow-env=ENV1,ENV2 app.ts`
+|`--allow-run`|List|Enables spawing all (if list is empty) or given child processes|`deno run --allow-run app.ts` or `deno run --allow-run=cat,ls,deno app.ts`
+ |`--allow-hrtime`|Boolean|Enables high resolution time measurements|`deno run --allow-hrtime app.ts`
 
-### Enable all
-All the access can be enabled by using `--allow-all` option. In other words, this would mean that the Deno process would have access to everything the running user has. `--allow-all` doesn't take any further options.
-
-### Read
-Selective read permissions to the local file system can be enabled via `--allow-read` option.
-
- - `--allow-read` without any option enables read access to everything in the local file system (restricted only by running user permissions)
- - `--allow-read=<paths>` enables read access to the paths specified. The read access is recursively applied.
-
-Some examples of granular read permissions are:
-`--allow-read=/var/tmp`
-`--allow-read=/var/tmp,/tmp,/datastore`
-
-### Write
-Selective write permissions to the local file system can be enabled via `--allow-write` option.
-
- - `--allow-write` without any option enables write access to everything in the local file system (restricted only by running user permissions)
- - `--allow-write=<paths>` enables write access to the paths specified. The write access is recursively applied.
-
-Some examples of granular write permissions are:
-`--allow-write=/var/tmp`
-`--allow-write=/var/tmp,/tmp`
-    
-### Network
-Selective network access can be enabled via `--allow-net` option.
-
- - `--allow-net` without any option enables access to all domains/IPs/etc.
- - `--allow-net=<networks>` enables network access to the specified list of networks. The networks are exactly applied i.e. no regex, domains, etc.
-
-Some examples of granular network permissions are:
-`--allow-net=10.1.1.0`
-`--allow-net=api.abc.com,api.def.com`
-
-### Environment
-Access to environment variables can be enabled via `--allow-env` option. This permission doesn't go any more granular.
-
-`--allow-env`
-
-### Child process
-Permission to create a child process can be enabled via `--allow-run` option. The use cases could be - running a shell command, invoking another Deno program, etc. This permission doesn't go any more granular.
-
-`--allow-run`
-
-### High resolution time
-This permission `--allow-hrtime` enables high-resolution time measurements instead of the standard time measurements. This could be useful if measuring in milliseconds. This permission doesn't go any more granular.
-
-`--allow-hrtime`
 
 ## Command line args
 The command line args are present in an array `Deno.args`. All the command line args are copied as is (no parsing is done).
@@ -227,28 +189,26 @@ Deno supports two types of standard file operations:
 
 Here are the file ops, both low-level and high-level:
 
- - `open/openSync`: Opens a file
-
+ - `open/openSync`: Opens a file and returns a file object
 ```ts
 const file=await Deno.open('/var/tmp/a.txt');
 ```
-
+- `create/createSync`: Creates a file if it doesn't exists or truncates if it exists, opens it, and returns a file object
+```ts
+const file=await Deno.create('/var/tmp/a.txt');
+```
  - `read/readSync`: Reads a block of data from the opened file from the current cursor position
-
 ```ts
 const file=await Deno.open('/var/tmp/a.txt');
 const buf=new Uint8Array(1000);
 await file.read(buf); //or Deno.read(file.rid, data)
 ```
-
 - `write/writeSync`: Writes a block of data into the opened file at the cursor position
 ```ts
 const file=await Deno.open('/var/tmp/a.txt', {create:true, write:true});
 await file.write(new TextEncoder().encode('abcd')); //or Deno.write(file.rid, data);
 ```
-
 - `seek/seekSync`: Move the cursor by an offset from a specified cursor position. There are three seek positions to offset from: Start, End, Current. A negative offset is required to move back.
-
 ```ts
 const file=await Deno.open('/var/tmp/a.txt', {create:true, write:true});
 const data=new TextEncoder().encode('abcd');
@@ -261,7 +221,6 @@ await file.seek(-4, Deno.SeekMode.End);
 await file.write(data); //abcdabcdabcd
 ```
 - `close`: Closes the resource
-
 ```ts
 file.close(); //or, Deno.close(file.rid)
 ```
@@ -285,14 +244,13 @@ await Deno.readTextFile("/var/tmp/a.txt");
 ```
 
 ## File system ops
-Deno comes with a number of useful functions to work with the file system. These are different from working on the files (file ops).
+Deno comes with several useful functions to work with the file system. These are different from working on the files (file ops).
 
 - `watchFs`: Raises notifications for any changes in the observed paths (recursive by default). This functions returns an object that implements AsyncIterator.
 ```ts
 const watcher=Deno.watchFs(["/var/tmp/", "./"]);
 for await(const event of watcher)
     console.log(event); //process event
-
 //----
 touch file1.txt
 //{ kind: "create", paths: [ "/Users/mayankc/Work/source/denoExamples/file1.txt" ] }
@@ -394,24 +352,94 @@ await Deno.readLink('./fileABC.txt');
 await Deno.realPath('./fileXYZ.txt');
 ///Users/mayankc/Work/source/denoExamples/fileXYZ.txt
 ```
-- `makeTempDir/makeTempDirSync`: Creates a directory with a random name (optionally specify the path, prefix, and suffix)
+- `makeTempDir/makeTempDirSync`: Creates a directory with a random name (optionally specify the path, prefix, and suffix) at the default path:
 ```ts
 await Deno.makeTempDir();
 ///var/folders/k0/3447gbp16vl309gg50ygclwr0000gn/T/0585d8f8
 await Deno.makeTempDir({dir: '/var/tmp', prefix: 'ABCD', suffix: 'VXYZ'});
 ///var/tmp/ABCD5036d87bVXYZ
 ```
-- `
+- `makeTempFile/makeTempFileSync`: Creates a file with a random name (optionally specify the path, prefix, and suffix) at the default path:
+```ts
+await Deno.makeTempFile();
+///var/folders/k0/3447gbp16vl309gg50ygclwr0000gn/T/e1527deb
+await Deno.makeTempFile({dir: '/tmp', pre ix: 'PREF_', suffix: '_SUFF'});
+///tmp/PREF_8d5d5ce7_SUFF
+```
+- `remove/removeSync`: Removes the path (set recursive to true if the path is a directory and it needs to be removed recursively)
+```ts
+await Deno.remove('/var/tmp/myDir1/file1');
+await Deno.remove('/var/tmp/myDir1/fileNotThere'); //throws error
+await Deno.remove('/var/tmp/myDir1'); //throws error - Directory not empty
+await Deno.remove('/var/tmp/myDir1', {recursive: true});
+```
+- `fdatasync/fdatasyncSync`: Immediately flushes all the data operations pending on a file to the disk
+```ts
+await Deno.fdatasync(file.rid);
+```
+- `fsync/fsyncSync`: Immediately flushes all the metadata and data operations pending on a file to the disk
+```ts
+await Deno.fsync(file.rid);
+```
+
+## Buffer ops
+Buffer is a simple data storage that provides a way to store and retrieve data. Deno's buffer has a cursor to keep track of the next read/write operation. It can grow as needed. Usually, Buffers are initialized from a data source like a file or socket and then are read as needed. From v1.9.0, `Buffer` has been moved to the standard library. 
+```ts
+import { Buffer } from "https://deno.land/std/io/buffer.ts";
+```
+
+- `new Buffer`: Creates a Buffer with default initial storage or takes an optional `ArrayBuffer` for initialization
+```ts
+const buf=new Buffer();
+const ab=new ArrayBuffer(10);
+const buf2=new Buffer(ab);
+```
+- `empty`: Returns true if buffer has completely read
+```ts
+buf.empty(); //true
+buf2.empty(); //false
+```
+- `length`: Returns the length of unread part of the buffer
+```ts
+buf.length(); //0
+buf2.length(); //8
+```
+- `capacity`: Returns the capacity of buffer (i.e. total number of bytes present )
+```ts
+buf.capacity(); //0
+buf2.capacity(); //8
+```
+- `bytes`: Returns the complete unread portion of the buffer
+```ts
+const buf=new Buffer(new Uint8Array(5).fill(1));
+buf.bytes();
+//Uint8Array(5) [ 1, 1, 1, 1, 1 ]
+```
+- `read/readSync`: Takes a Uint8Array as input and reads bytes from buffer upto the length of array
+```ts
+const uint8 = new Uint8Array(20).fill(1);
+const buf=new Buffer(uint8);
+const readBuf=new Uint8Array(5);
+await buf.read(readBuf); //5 bytes read
+buf.length; //15
+```
+- `write/writeSync`: Takes a Uint8Array and writes all the bytes into the buffer
+```ts
+const buf=new Buffer(new Uint8Array(5).fill(1));
+await buf.write(new Uint8Array(5).fill(2));
+buf.bytes();
+//Uint8Array(10) [1, 1, 1, 1, 1, 2, 2, 2, 2, 2]
+```
 
 ## Process ops
-Use `Deno.pid` and `Deno.ppid` variables to get current and parent's process IDs:
+- Use `Deno.pid` and `Deno.ppid` variables to get current and parent's process IDs:
 ```ts
 Deno.pid;
 //89597
 Deno.ppid;
 //81921
 ```
-To abruptly exit the running process, use `Deno.exit` function (an exit code is required):
+- To abruptly exit the running process, use `Deno.exit` function (an exit code is required):
 ```ts
 //a.ts
 setTimeout(() => {
@@ -422,6 +450,11 @@ setTimeout(() => {
 shell > deno run a.ts
 shell > //the line never gets printed
 ```
+- To synchronously sleep current thread for given milliseconds, use `Deno.sleepSync`:
+```ts
+Deno.sleepSync(100);
+```
+
 
 
 ## Child Process
@@ -458,6 +491,24 @@ file.close();
 ```ts
 const p=Deno.run({cmd: 'infiniteLoop'});
 setTimeout(() => p.kill(9), 5000);
+```
+
+## User interaction
+If Deno is running as an interactive shell, the functions `alert`, `prompt`, and `confirm` can be used to print a message to the user or take input from the user. All three functions are blocking till the user presses enter.
+
+- `alert`: Prints a message on the console, and waits for the user to press enter
+- `prompt`: Print a message on the console with an optional default value, and waits for the user to give input or press enter
+- `confirm`: Prints a message on console with y/N, and waits for the user to give input or press enter (only `y` and `Y` is returned as `true`, otherwise `false`)
+
+```ts
+alert('This is a message');
+//This is a message [Enter]
+const val=prompt('Input required');
+//Input required 
+const val2=prompt('Input required', '127.0.0.1'); //with default value
+//Input required [127.0.0.1] 
+const val3=confirm('Are you sure?');
+//Are you sure? [y/N]
 ```
 
 ## Metrics
