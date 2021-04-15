@@ -1,9 +1,8 @@
 
+
+
+
 ![](https://github.com/mayankchoubey/deno-in-2-hours/blob/ebbba967ddd3abd2593069bc794c70ab21fbc3a8/deno%20in%202%20hours%20-%20cover.png)
-
-
-
-
 
 # Deno in 2 hours
 
@@ -136,7 +135,7 @@ Deno.env.get('ENV1');
 //VAR1
 Deno.env.set('ENV1', 'VAR2');
 Deno.env.toObject();
-//{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... suppressed ....ENV1: "VAR1"}
+//{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... ....ENV1: "VAR1"}
 ```
 
 ## Reader, Writer, Seeker, and Closer
@@ -430,6 +429,70 @@ await buf.write(new Uint8Array(5).fill(2));
 buf.bytes();
 //Uint8Array(10) [1, 1, 1, 1, 1, 2, 2, 2, 2, 2]
 ```
+- `readFrom/readFromSync`: Reads all the data from a `reader` and saves it into the buffer
+```ts
+const file=await Deno.open('/var/tmp/child.txt');
+const buf=new Buffer();
+await buf.readFrom(file);
+buf.bytes();
+//Uint8Array(12) [104, 101, 108, 108, 111,  32, 119, 111, 114, 108, 100,  10]
+```
+
+## ReadAll, WriteAll, and Iter
+`readAll`, `writeAll`, and `iter` are three very commonly used functions in Deno. From v1.9.0, these functions have been moved to the standard library.
+
+```ts
+import { readAll, writeAll, iter } from "https://deno.land/std/io/util.ts";
+```
+
+- `readAll/readAllSync`: Reads everything from a reader and returns in a Uint8Array
+```ts
+const file=await Deno.open('/var/tmp/child.txt');
+const data=await readAll(file);
+//Uint8Array(12) [104, 101, 108, 108, 111,  32, 119, 111, 114, 108, 100,  10]
+```
+- `writeAll/writeAllSync`: Writes everything present in Uint8Array to the writer
+```ts
+const file=await Deno.open('/var/tmp/child.txt', {write: true});
+await writeAll(file, new Uint8Array(5).fill(65));
+//cat /var/tmp/child.txt -> AAAAA world
+```
+-`iter/iterSync`: Create an asynchronous (or synchronous) iterator for a given reader. It reads in chunks with a default size unless specified in options.
+```ts
+const file=await Deno.open('/var/tmp/child.txt');
+for await(const c of iter(file))
+    c; //Uint8Array(12) [104, 101, 108, 108, 111,  32, 119, 111, 114, 108, 100,  10]
+--
+for await(const val of iter(file, {bufSize:6}))
+    c;
+//Uint8Array(6) [ 65, 65, 65, 65, 65, 32 ]
+//Uint8Array(6) [ 119, 111, 114, 108, 100, 10 ]
+```
+
+## TextEncoder and TextDecoder
+Deno comes with the web's standard `TextEncoder` and `TextDecoder` to convert data from string to Uint8Array and vice versa. These are very useful in working with file, buffer, and socket ops.
+
+```ts
+new TextEncoder().encode('ABCD');
+//Uint8Array(4) [ 65, 66, 67, 68 ]
+new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ]));
+//ABCD
+```
+
+## Get random values
+Deno's crypto comes with web's `getRandomValues` function to generate cryptographically strong random numbers. This function fills the input array with 8/16/32 bit random numbers.
+
+```ts
+const rv=new Uint8Array(5);
+crypto.getRandomValues(rv);
+//rv: Uint8Array(5) [ 134, 11, 79, 126, 167 ]
+const rv=new Uint16Array(5);
+crypto.getRandomValues(rv);
+//rv: Uint16Array(5) [ 63909, 62236, 9310, 49137, 60005 ]
+const rv=new Uint32Array(5);
+crypto.getRandomValues(rv);
+//rv: Uint32Array(5) [ 1947225378, 753635950, 415007456, 3202401173, 1941195170 ]
+```
 
 ## Process ops
 - Use `Deno.pid` and `Deno.ppid` variables to get current and parent's process IDs:
@@ -531,4 +594,51 @@ Deno.metrics();
 }
 ```
 
+## Deno specific errors
+|Error  |
+|--|
+|NotFound  |
+|PermissionDenied
+|ConnectionRefused
+|ConnectionReset
+|ConnectionAborted
+|NotConnected
+|AddrInUse
+|AddrNotAvailable
+|BrokenPipe
+|AlreadyExists
+|InvalidData
+|TimedOut
+|Interrupted
+|WriteZero
+|UnexpectedEof
+|BadResource
+|Http
+|Busy
+|NotSupported
 
+## Unit testing
+Deno's toolchain comes with a simple unit testing framework that can be executed through `deno test` command. It runs all the files that match `*test.ts`.
+
+```ts
+import { assert } from "https://deno.land/std/testing/asserts.ts";
+
+Deno.test("first test", () => {
+    assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
+});
+
+Deno.test("second test", async () => {
+    const res=await fetch("https://deno.land");
+    const resText=await res.text();
+    assert(resText.length > 0);
+});
+```
+
+```shell
+deno test --allow-all
+running 2 tests
+test first test ... ok (1ms)
+test second test ... ok (116ms)
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out (118ms)
+```
