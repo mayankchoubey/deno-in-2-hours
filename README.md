@@ -7,6 +7,33 @@
 
 > All the sample code is shown for async calls wherever the function is available in both async and sync variants, otherwise, it's sync. Sync calls are mentioned wherever they are available.
 
+- [Introduction](#introduction)
+- [Installation](#installation)
+  * [Direct](#direct)
+  * [Package manager](#package-manager)
+- [Upgrade](#upgrade)
+- [Commands](#commands)
+- [Version, build, paths and other info](#version-build-paths-and-other-info)
+- [Permissions](#permissions)
+- [Command line args](#command-line-args)
+- [Environment variables](#environment-variables)
+- [Reader, Writer, Seeker, and Closer](#reader-writer-seeker-and-closer)
+- [Built-in resources](#built-in-resources)
+- [File ops](#file-ops)
+- [File system ops](#file-system-ops)
+- [Buffer ops](#buffer-ops)
+- [ReadAll, WriteAll, and Iter](#readall-writeall-and-iter)
+- [Network ops](#network-ops)
+- [System info](#system-info)
+- [Encoding and decoding](#encoding-and-decoding)
+- [Get random values](#get-random-values)
+- [Process ops](#process-ops)
+- [Child Process](#child-process)
+- [User interaction](#user-interaction)
+- [Metrics](#metrics)
+- [Deno specific errors](#deno-specific-errors)
+- [Unit testing](#unit-testing)
+
 ## Introduction
 Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses V8 and is built in Rust. Deno is a complete toolchain that ships as a single executable. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was made generally available in May'2020. The latest release of Deno is `1.9.0`.
 
