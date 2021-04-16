@@ -1,4 +1,5 @@
 
+
 ![](https://github.com/mayankchoubey/deno-in-2-hours/blob/ebbba967ddd3abd2593069bc794c70ab21fbc3a8/deno%20in%202%20hours%20-%20cover.png)
 
 
@@ -224,12 +225,14 @@ deno run a.ts -a 1 -b 2 -c d -e -f -g
 ```
 
 ## Environment variables
-- Use `Deno.env` object's functions to `get`(get single env), `toObject`(get all envs), and `set` (set env) the environment variables:
+- Use `Deno.env` object's functions to `get`(get single env), `toObject`(get all envs), `delete` (remove an env), and `set` (set an env) the environment variables:
 ```ts
 Deno.env.get('ENV1'); //VAR1
 Deno.env.set('ENV1', 'VAR2');
+Deno.env.set('ENV3', 'VAR3');
+Deno.env.delete('ENV2');
 Deno.env.toObject();
-//{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... ....ENV1: "VAR1"}
+//{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... ....ENV1: "VAR2"}
 ```
 
 ## Reader, Writer, Seeker, and Closer
@@ -263,7 +266,7 @@ await Deno.read(Deno.stdin.rid, buf);
 //User input: ABCD
 //buf: Uint8Array(5) [ 65, 66, 67, 68, 10 ]
 ```
-- Use `Deno.write/writeSync` to write a chunk of data to any resource implementing writer interface:
+- Use `Deno.write/Deno.writeSync` to write a chunk of data to any resource implementing writer interface:
 ```ts
 const buf=new Uint8Array(5).fill(65);
 const file=await Deno.open('/var/tmp/a.txt', {write: true});
@@ -275,6 +278,13 @@ await Deno.write(Deno.stderr.rid, buf); //AAAAA
 await Deno.seek(file.rid, 6, Deno.SeekMode.Start);
 await Deno.seek(file.rid, 6, Deno.SeekMode.Current);
 await Deno.seek(file.rid, -6, Deno.SeekMode.End); //minus to move back
+```
+- Use `Deno.copy` to copy all the data from a reader to a writer (file, socket, etc.)
+```ts
+//cat /var/tmp/a.txt -> AAAAA67890
+const file=await Deno.open('/var/tmp/a.txt');
+await Deno.copy(file, Deno.stdout);
+//AAAAA67890
 ```
 - Use `Deno.close` to close any resource implementing closer interface:
 ```ts
@@ -308,26 +318,26 @@ Deno supports two types of file operations:
 
 Here are the file ops, both low-level and high-level:
 
- - `open/openSync`: Opens a file and returns a file object
+ - Use `Deno.open/Deno.openSync` to open a file and get a file object
 ```ts
 const file=await Deno.open('/var/tmp/a.txt');
 ```
-- `create/createSync`: Creates a file if it doesn't exists or truncates if it exists, opens it, and returns a file object
+- Use `Deno.create/Deno.createSync` to create a file if it doesn't exists or truncates if it exists, opens it, and get a file object
 ```ts
 const file=await Deno.create('/var/tmp/a.txt');
 ```
- - `read/readSync`: Reads a block of data from the opened file starting from the current cursor position
+ - Use `read/readSync` to read a block of data from the opened file starting from the current cursor position
 ```ts
 const file=await Deno.open('/var/tmp/a.txt');
 const buf=new Uint8Array(1000);
 await file.read(buf); //or Deno.read(file.rid, data)
 ```
-- `write/writeSync`: Writes a block of data into the opened file starting at the cursor position
+- Use `write/writeSync` to write a block of data into the opened file starting at the cursor position
 ```ts
 const file=await Deno.open('/var/tmp/a.txt', {create:true, write:true});
 await file.write(new TextEncoder().encode('abcd')); //or Deno.write(file.rid, data);
 ```
-- `seek/seekSync`: Move the cursor by an offset from a specified cursor position. There are three seek positions to offset from: Start, End, Current. A negative offset is required to move back.
+- Use `seek/seekSync` to move the cursor by an offset from a specified cursor position. There are three seek positions to offset from: Start, End, Current. A negative offset is required to move back.
 ```ts
 const file=await Deno.open('/var/tmp/a.txt', {create:true, write:true});
 const data=new TextEncoder().encode('abcd');
@@ -339,24 +349,24 @@ await file.write(data); //abcdabcdabcd
 await file.seek(-4, Deno.SeekMode.End); //move back
 await file.write(data); //abcdabcdabcd
 ```
-- `close`: Closes the resource
+- Use `close` to close a resource
 ```ts
 file.close(); //or, Deno.close(file.rid)
 ```
-- `writeFile/writeFileSync`:  	Write a Uint8Array to a file
+- Use `Deno.writeFile/Deno.writeFileSync` to write a Uint8Array into a file (open/create, close taken care by Deno)
 ```ts
 await Deno.writeFile("/var/tmp/a.txt", new TextEncoder().encode("ABCD"));
 ```
-- `writeTextFile/writeTextFileSync`: Write a string to a file
+- Use `Deno.writeTextFile/Deno.writeTextFileSync` to write a string into a file (open/create, close taken care by Deno)
 ```ts
 await Deno.writeTextFile("/var/tmp/a.txt", "ABCD");
 ```
-- `readFile/readFileSync`: Read entire file into a Uint8Array
+- Use `Deno.readFile/Deno.readFileSync` to read entire file into a Uint8Array (open, close taken care by Deno)
 ```ts
 await Deno.readFile("/var/tmp/a.txt");
 //Uint8Array(4) [ 65, 66, 67, 68 ]
 ```
-- `readTextFile/readTextFileSync`: Read entire file into a string
+- Use `Deno.readTextFile/Deno.readTextFileSync` to read entire file into a string (open, close taken care by Deno)
 ```ts
 await Deno.readTextFile("/var/tmp/a.txt");
 //ABCD
@@ -365,7 +375,7 @@ await Deno.readTextFile("/var/tmp/a.txt");
 ## File system ops
 Deno comes with several useful functions to work with the file system. These are different from working on the files (file ops).
 
-- `watchFs`: Raises notifications for any changes in the observed paths (recursive by default). This functions returns an object that implements AsyncIterator.
+- Use `Deno.watchFs` to get notifications for any changes in the observed paths (recursive by default). This functions returns an object that implements AsyncIterator.
 ```ts
 const watcher=Deno.watchFs(["/var/tmp/", "./"]);
 for await(const event of watcher)
@@ -379,68 +389,66 @@ echo "abcd" > file1.txt
 //{ kind: "create", paths: [ "/Users/mayankc/Work/source/denoExamples/file1.txt" ] }
 //{ kind: "modify", paths: [ "/Users/mayankc/Work/source/denoExamples/file1.txt" ] }
 ```
-- `chmod/chmodSync`: Update permissions of a given path (Input is in format 0oXXX where X is a digit)
+- Use `Deno.chmod/Deno.chmodSync` to update permissions of a given path (Input is in format 0oXXX where X is a digit)
 ```ts
 await Deno.chmod("/var/tmp/a.txt", 0o400);
 //ls -ltr /var/tmp/a.txt 
 //-r--------  1 mayankc  wheel  4 Apr 12 23:43 /var/tmp/a.txt
 ```
-- `chown/chownSync`: Update ownership of a given path (Input is uid and gid of new owner)
+- Use `Deno.chown/Deno.chownSync` to update ownership of a given path (Input is uid and gid of new owner)
 ```ts
 await Deno.chown("/var/tmp/a.txt", 100, 200);
 //ls -ltr /var/tmp/a.txt 
 //-r--------  1 guest  games  4 Apr 12 23:43 /var/tmp/a.txt
 ```
-- `copyFile/copyFileSync`: Makes a copy of a file (permissions are also copied). If copied file name exists, it fails.
+- Use `Deno.copyFile/Deno.copyFileSync` to make a copy of a file (permissions are also copied). If copied file name exists, it fails.
 ```ts
 await Deno.copyFile("/var/tmp/a.txt", "/var/tmp/b.txt");
 //-r--------  1 mayankc  wheel   4 Apr 12 23:43 /var/tmp/b.txt
 //-r--------  1 mayankc  wheel   4 Apr 12 23:43 /var/tmp/a.txt
 ```
-- `cwd`: Gets the current working directory
+- Use `Deno.cwd` to get the current working directory
 ```ts
 Deno.cwd();
 ///Users/mayankc/Work/source/denoExamples
 ```
-- `chdir`: Change the current working directory
+- Use `Deno.chdir` to change the current working directory
 ```ts
 Deno.chdir('/tmp');
 Deno.cwd();
 // /tmp
 ```
-- `mkdir/mkdirSync`: Create a directory at the specified path (throws error if directory already exists):
+- Use `Deno.mkdir/Deno.mkdirSync` to create a directory at the specified path (throws error if directory already exists):
 ```ts
 await Deno.mkdir("/tmp/1");
 // ls -F /tmp/ -> 1/
 ```
-- `readDir/readDirSync`: Reads the contents of a given directory and returns AsyncIterator to process each entity (name, type, link):
+- Use `Deno.readDir/Deno.readDirSync` to read the contents of a given directory and get an AsyncIterator to process each entity (name, type, link):
 ```ts
 //ls /var/tmp/myDir -> file1	file2	myDir2/
-
 for await (const dirEntry of Deno.readDir("/var/tmp/myDir"))
     dirEntry; //do something with the contents
-
 //{ name: "file2", isFile: true, isDirectory: false, isSymlink: false }
 //{ name: "file1", isFile: true, isDirectory: false, isSymlink: false }
 //{ name: "myDir2", isFile: false, isDirectory: true, isSymlink: false }
 ```
-- `rename/renameSync`: Renames a given path (file or directory):
+- Use `Deno.rename/Deno.renameSync` to rename a given path (file or directory):
 ```ts
 await Deno.rename("/var/tmp/myDir", "/var/tmp/myDir1");
 //ls -F /var/tmp/
 //....... myDir1/ .......
 ```
-- `stat/statSync`: Get stats of a file or a directory (symlinks are followed)
+- Use `Deno.stat/Deno.statSync` to get stats of a file or a directory (symlinks are followed)
 ```ts
 await Deno.stat('/var/tmp/myDir1');
 //{isFile: false, isDirectory: true, isSymlink: false, size: 160, mtime: 2021-04-14T03:47:47.471Z, atime: 2021-04-14T03:59:58.937Z, birthtime: 2021-04-14T03:47:27.678Z, dev: 16777220, ino: 82623212, mode: 16877, nlink: 5, uid: 501, gid: 0, rdev: 0, blksize: 4096, blocks: 0}
 ```
-- `lstat/lstatSync`: Get stats of a symlink instead of following it
+- Use `Deno.lstat/Deno.lstatSync` to get stats of a symlink instead of following it
 ```ts
 await Deno.lstat('/var');
 //{isFile: false, isDirectory: false, isSymlink: true, size: 11, mtime: 2019-10-17T20:46:36.987Z, atime: 2019-10-17T20:46:36.987Z, birthtime: 2019-10-17T20:46:36.987Z, dev: 16777220, ino: 1152921500312394500, mode: 41453, nlink: 1, uid: 0, gid: 80, rdev: 0, blksize: 4096, blocks: 0}
 ```
-- `truncate/truncateSync`: Truncates a file from given length if specified, entire file if not specified
+- Use `Deno.truncate/Deno.truncateSync` to truncate a file from given length if specified, entire file if not specified
 ```ts
 //echo "abcdefgh" > /var/tmp/myDir1/file1
 //cat /var/tmp/myDir1/file1 -> abcdefgh
@@ -449,56 +457,62 @@ await Deno.truncate('/var/tmp/myDir1/file1', 5);
 await Deno.truncate('/var/tmp/myDir1/file1');
 //cat /var/tmp/myDir1/file1 -> 
 ```
-- `link/linkSync`: Creates a hard link (mirror copy)
+- Use `Deno.link/Deno.linkSync` to creates a hard link (mirror copy)
 ```ts
 //echo "123" > fileXYZ.txt
 await Deno.link("./fileXYZ.txt", "./fileABC.txt");
 //ls ./ -> ..... fileXYZ.txt fileABC.txt .....
 ```
-- `symlink/symlinkSync`: Creates a symbolic link (like pointer)
+- Use `Deno.symlink/Deno.symlinkSync` to create a symbolic link (like pointer)
 ```ts
 //echo "123" > fileXYZ.txt
 await Deno.symlink("./fileXYZ.txt", "./fileABC.txt");
 //ls -ltr -> .... fileXYZ.txt fileABC.txt -> ./fileXYZ.txt ....
 ```
-- `readLink/readLinkSync`: Returns the destination of a symbolic link
+- Use `Deno.readLink/Deno.readLinkSync` to get the destination of a symbolic link
 ```ts
 await Deno.readLink('./fileABC.txt');
 //./fileXYZ.txt
 ```
-- `realPath/realPathSync`: Returns the full path for a relative path
+- Use `Deno.realPath/Deno.realPathSync` to get the full path for a relative path
 ```ts
 await Deno.realPath('./fileXYZ.txt');
 ///Users/mayankc/Work/source/denoExamples/fileXYZ.txt
 ```
-- `makeTempDir/makeTempDirSync`: Creates a directory with a random name (optionally specify the path, prefix, and suffix) at the default path:
+- Use `Deno.makeTempDir/Deno.makeTempDirSync` to create a directory with a random name (optionally specify the path, prefix, and suffix) at the default path:
 ```ts
 await Deno.makeTempDir();
 ///var/folders/k0/3447gbp16vl309gg50ygclwr0000gn/T/0585d8f8
 await Deno.makeTempDir({dir: '/var/tmp', prefix: 'ABCD', suffix: 'VXYZ'});
 ///var/tmp/ABCD5036d87bVXYZ
 ```
-- `makeTempFile/makeTempFileSync`: Creates a file with a random name (optionally specify the path, prefix, and suffix) at the default path:
+- Use `Deno.makeTempFile/Deno.makeTempFileSync` to create a file with a random name (optionally specify the path, prefix, and suffix) at the default path:
 ```ts
 await Deno.makeTempFile();
 ///var/folders/k0/3447gbp16vl309gg50ygclwr0000gn/T/e1527deb
 await Deno.makeTempFile({dir: '/tmp', pre ix: 'PREF_', suffix: '_SUFF'});
 ///tmp/PREF_8d5d5ce7_SUFF
 ```
-- `remove/removeSync`: Removes the path (set recursive to true if the path is a directory and it needs to be removed recursively)
+- Use `Deno.remove/Deno.removeSync` to remove the path (set recursive to true if the path is a directory and it needs to be removed recursively)
 ```ts
 await Deno.remove('/var/tmp/myDir1/file1');
 await Deno.remove('/var/tmp/myDir1/fileNotThere'); //throws error
 await Deno.remove('/var/tmp/myDir1'); //throws error - Directory not empty
 await Deno.remove('/var/tmp/myDir1', {recursive: true});
 ```
-- `fdatasync/fdatasyncSync`: Immediately flushes all the data operations pending on a file to the disk
+- Use `Deno.fdatasync/Deno.fdatasyncSync` to immediately flush all the data operations pending on a file to the disk
 ```ts
 await Deno.fdatasync(file.rid);
 ```
-- `fsync/fsyncSync`: Immediately flushes all the metadata and data operations pending on a file to the disk
+- Use `Deno.fsync/Deno.fsyncSync` to immediately flush all the metadata and data operations pending on a file to the disk
 ```ts
 await Deno.fsync(file.rid);
+```
+- Use `Deno.utime/Deno.utime` to update the access and modification time of a given path (takes unix epoch or a date object)
+```ts 
+//-rw-r--r--  1 mayankc  wheel  11 Apr 15 12:55 /var/tmp/a.txt
+await Deno.utime('/var/tmp/a.txt', new Date(), new Date());
+//-rw-r--r--  1 mayankc  wheel  11 Apr 16 12:36 /var/tmp/a.txt
 ```
 
 ## Buffer ops
@@ -603,7 +617,7 @@ if(res.ok) {
     await res.formData(); //FormData -> FormData { [Symbol(data)]: [ [ "name", "Mayank" ] ] }
 }
 ```
-- Use `listen/listenTls` to create a low-level TCP server (For HTTP servers,  use `serve/serveTls` instead)
+- Use `Deno.listen/Deno.listenTls` to create a low-level TCP server (For HTTP servers,  use `serve/serveTls` instead)
 ```ts
 const listener = Deno.listen({ hostname: "127.0.0.1", port: 5566 });
 const conn=await listener.accept();
@@ -613,7 +627,7 @@ listener.close();
 //--
 const listener = Deno.listenTls({ hostname: "127.0.0.1", port: 5566, certFile: "./c.crt", keyFile: "./k.key" });
 ```
-- Use `listenDatagram` to create a UDP server
+- Use `Deno.listenDatagram` to create a UDP server (UDP is bothways server)
 ```ts
 const server = Deno.listenDatagram({ port: 3000, transport: "udp" });
 while (true) {
@@ -621,7 +635,7 @@ while (true) {
   await server.send(recvd, remote); //echo it back
 }
 ```
-- Use `connect/connectTls` to create a TCP client without or with TLS
+- Use `Deno.connect/Deno.connectTls` to create a TCP client without or with TLS
 ```ts
 const conn=await Deno.connect({port: 4544 });
 await conn.write(new TextEncoder().encode("ABCD"));
@@ -631,8 +645,7 @@ const n=await conn.read(buf);
 //--
 const conn=await Deno.connectTls({hostname: 'localhost', port: 4544, certFile: './server.crt' });
 ```
-
-- Use `serve/serveTls` to create HTTP servers without or with TLS
+- Use `Deno.serve/Deno.serveTls` to create HTTP servers without or with TLS
 ```ts
 import { serve } from "https://deno.land/std/http/server.ts";
 for await (const req of serve({port:3000}))
@@ -642,8 +655,45 @@ import { serveTLS } from "https://deno.land/std/http/server.ts";
 for await (const req of serveTLS({port:3000, certFile: "./c.crt", keyFile: "./k.key"}))
     req; //do something with request
 ```
+- Use `Deno.resolveDns` to fetch a particular type of record (`A`/`AAAA`/`ANAME`/`CNAME`/`SRV`/`PTR`/`MX`/`TXT`) from the DNS
+```ts
+await Deno.resolveDns("www.facebook.com", "A"); //[ "69.171.250.35" ]
+await Deno.resolveDns("www.facebook.com", "AAAA"); //[ "2a03:2880:f1ff:83:face:b00c:0:25de" ]
+await Deno.resolveDns("www.facebook.com", "CNAME"); //[ "star-mini.c10r.facebook.com." ]
+```
+- Use`Deno.shutdown` to close the socket
+```ts
+Deno.shutdown(conn.rid);
+```
 
 ## System info
+> A lot of the system functions are under unstable umbrella
+- Use `Deno.hostname` to get name of the host where Deno is running
+```ts
+Deno.hostname(); //Mayanks-MacBook-Pro.local
+```
+- Use `Deno.consoleSize` to get rows and columns in the console window
+```ts
+Deno.consoleSize(); //{ columns: 67, rows: 15 }
+```
+- Use `Deno.loadavg` to get the system-wide load average numbers for 1, 5, and 15 minutes
+```ts
+Deno.loadavg(); //[ 1.92919921875, 2.50830078125, 2.3837890625 ]
+```
+- Use `Deno.osRelease` to get details about the operating system
+```ts
+Deno.osRelease(); //19.6.0 (on mac)
+```
+- Use `Deno.systemMemoryInfo` to get detailed information about system-wide memory usage
+```ts
+Deno.systemMemoryInfo();
+//{total: 8388608, free: 32220, available: 1862560, buffers: 0, cached: 0, swapTotal: 4194304, swapFree: 1158144}
+```
+- Use `Deno.systemCpuInfo` to get information about number of cores and their speed
+```ts
+Deno.systemCpuInfo(); //{ cores: 8, speed: 1400 }
+```
+- Use `
 
 ## Encoding and decoding
 Deno comes with the web's standard `TextEncoder` and `TextDecoder` to convert data from string to Uint8Array and vice versa. These are very useful in working with file, buffer, and socket ops.
@@ -693,7 +743,10 @@ shell > //the line never gets printed
 ```ts
 Deno.sleepSync(100);
 ```
-
+- Use `Deno.kill` to send a signal to a given process id
+```ts
+Deno.kill(pid, Deno.Signal.SIGINT);
+```
 
 
 ## Child Process
@@ -794,7 +847,7 @@ Deno.metrics();
 |NotSupported
 
 ## Unit testing
-Deno's toolchain comes with a simple unit testing framework that can be executed through `deno test` command. It runs all the files that match `*test.ts`.
+Deno's toolchain comes with a simple unit testing framework that can be executed through `deno test` command. It runs all the files that match `*test.ts`. Use `ignore` to skip selective test cases or `only` to run only selective test cases matching a condition.
 
 ```ts
 import { assert } from "https://deno.land/std/testing/asserts.ts";
@@ -808,6 +861,13 @@ Deno.test("second test", async () => {
     const resText=await res.text();
     assert(resText.length > 0);
 });
+
+Deno.test({ name: "third test",
+            ignore: true, //or add some condition
+            fn: () => {
+                assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
+            }
+});
 ```
 
 ```shell
@@ -816,7 +876,7 @@ running 2 tests
 test first test ... ok (1ms)
 test second test ... ok (116ms)
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out (118ms)
+test result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out (118ms)
 ```
 
 
