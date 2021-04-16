@@ -1,31 +1,27 @@
 
-
-
-
 ![](https://github.com/mayankchoubey/deno-in-2-hours/blob/ebbba967ddd3abd2593069bc794c70ab21fbc3a8/deno%20in%202%20hours%20-%20cover.png)
 
-# Deno in 2 hours
 
 > Learn all about Deno in just 2 hours
 
-> All the code is shown for async calls wherever the function is available in both async and sync variants. Sync calls are mentioned wherever they are available.
+> All the sample code is shown for async calls wherever the function is available in both async and sync variants, otherwise, it's sync. Sync calls are mentioned wherever they are available.
 
 ## Introduction
-Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses V8 and is built in Rust. Deno is a complete toolchain that ships as a single executable. It runs in a sandbox and supports Typescript out the box. Deno 1.0 was made generally available in May'2020. 
+Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses V8 and is built in Rust. Deno is a complete toolchain that ships as a single executable. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was made generally available in May'2020. The latest release of Deno is `1.9.0`.
 
 ## Installation
 Deno installs as a single executable with no dependencies. It can be easily installed either directly or using package managers on all the supported platforms.
 
 ### Direct
-For Mac and Linux, the shell command is:
+For Mac and Linux, use `curl` and `shell` commands:
 
 `curl -fsSL https://deno.land/x/install/install.sh |  sh` 
 
-For windows, the PowerShell command is:
+For windows, use `powershell` command:
 
 `iwr https://deno.land/x/install/install.ps1 -useb | iex`
 
-An installation error may come if `unzip`is not installed. To install `unzip` use the following command:
+An installation error may come if `unzip`is not installed on Mac or Linux. To install `unzip` use the following command:
 
 |OS|Command  |
 |--|--|
@@ -41,15 +37,15 @@ An installation error may come if `unzip`is not installed. To install `unzip` us
 |Windows|`scoop install deno`
 
 ## Upgrade
-As Deno is a complete toolchain within a single executable, the upgrade is also built-in via command. To upgrade Deno, simply use:
+As Deno is a complete toolchain within a single executable, the upgrade is also available through a built-in command. To upgrade Deno, simply use:
 
-|Upgrade Type|Command  |
+|Upgrade To|Command  |
 |--|--|
-|To latest  |`deno upgrade`  |
-|To a particular version|`deno upgrade --version 1.8.3`
+|Latest  |`deno upgrade`  |
+|A particular version|`deno upgrade --version 1.8.3`
 
 ## Commands
-Deno provides all its functionality through a large number of commands. The commands range from running code, testing, upgrade, formatting, etc.
+Deno provides all its functionality through a large number of commands. The commands range from running the application, testing, upgrade, formatting, etc.
 
 |Command|Use  |
 |--|--|
@@ -71,44 +67,143 @@ Deno provides all its functionality through a large number of commands. The comm
 |`compile`|Compiles the given script into a self-contained executable
 |`lsp`|For interaction with editors and IDEs
 
-## Common commands
-To run an application, use `run` command:
-```shell
+Some of the commonly used commands:
+
+- Use `run` command to run an application:
+```ts
 deno run --allow-read --allow-write --allow-net app.ts
+//Server listening on http://localhost:8080
 ```
 
-To run unit tests, use `test` command (this runs all the `*test*` files present in the local directory):
-```shell
+- Use `test` command to run the unit tests (this runs all the `*test.ts` files present in the local directory):
+```ts
 deno test --allow-all
+//test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out (118ms)
 ```
 
-To quickly run a piece of code, use `eval` command (use `-p` to print the output of the expression on the console):
-```shell
+- Use `eval` command to quickly run a piece of code (use `-p` to print the output of the expression on the console):
+```ts
 deno eval "'hello world'" -p
 //hello world
 ```
 
+- Use `fmt` command to fix indentation issues (it overwrites the file)
+```ts
+//Before app.ts
+import {abc,def} from "https://some.server.com";
+const o={a:1, b:2, c:'hello'}, a=[1,2,3];
+for(const k in o)
+	console.log(k);
+for(const k of a)
+	console.log(k);
+//--
+deno fmt app.ts
+//After app.ts
+import { abc, def } from "https://some.server.com";
+
+const o = { a: 1, b: 2, c: "hello" }, a = [1, 2, 3];
+for (const k in o) {
+  console.log(k);
+}
+for (const k of a) {
+  console.log(k);
+}
+```
+
+- Use `cache` to download and cache all the dependencies
+```ts
+import { doze } from "https://deno.land/x/doze/mod.ts";
+//--
+deno cache app.ts
+Download https://deno.land/x/doze/mod.ts
+Warning Implicitly using latest version (1.0) for https://deno.land/x/doze/mod.ts
+Download https://deno.land/x/doze@1.0/mod.ts
+Download https://deno.land/x/doze@1.0/doze.ts
+Check file:///private/var/tmp/myDir/app.ts
+```
+- Use `info` to get detailed information about the module and it's dependencies
+```ts
+deno info app.ts
+local: /private/var/tmp/myDir/app.ts
+type: TypeScript
+emit: /Users/mayankc/Library/Caches/deno/gen/file/private/var/tmp/myDir/app.ts.js
+dependencies: 2 unique (total 552B)
+
+file:///private/var/tmp/myDir/app.ts (191B)
+└─┬ https://deno.land/x/doze@1.0/mod.ts (25B)
+  └── https://deno.land/x/doze@1.0/doze.ts (336B)
+```
+- Use `bundle` to create a single JS file containing the module and all it's dependencies (useful in distribution)
+```ts
+//app1.ts
+export const HW="Hello from app1";
+//app2.ts
+export const HW="Hello from app2";
+//app.ts
+import * as one from "./app1.ts";
+import * as two from "./app2.ts";
+const HW='Hello from app';
+console.log(HW, one, two);
+//--
+deno bundle app.ts
+//bundled output
+const HW = "Hello from app1";
+const mod = function() {
+    return {
+        HW: HW
+    };
+}();
+const HW1 = "Hello from app2";
+const mod1 = function() {
+    return {
+        HW: HW1
+    };
+}();
+const HW2 = 'Hello from app';
+console.log(HW2, mod, mod1);
+```
+- Use `compile` to build a self-contained executable for a module and all its dependencies
+```ts
+deno compile app.ts
+Check file:///private/var/tmp/myDir/app.ts
+Bundle file:///private/var/tmp/myDir/app.ts
+Compile file:///private/var/tmp/myDir/app.ts
+Emit app
+./app
+Hello from app { HW: "Hello from app1" } { HW: "Hello from app2" }
+```
+- Use `install` to install an app as a self-contained executable at the specified path
+```ts
+deno install -f --root /tmp -n app app.ts
+✅ Successfully installed app
+/private/tmp/bin/app
+```
+
 ## Version, build, paths and other info
-`Deno.version` object can be used to get the versions of Deno, Typescript, and V8 (Note: It's an object, not a function):
+- Use `Deno.version` object to get the versions of Deno, Typescript, and V8 (Note: It's an object, not a function):
 
 ```ts
 Deno.version;
 //{ deno: "1.9.0", v8: "9.1.269.5", typescript: "4.2.2" }
 ```
-
-To get build information, use `Deno.build`:
+- Use `Deno.build` object to get information about the Deno build being used:
 ```ts
 Deno.build;
 //{target: "x86_64-apple-darwin", arch: "x86_64", os: "darwin", vendor: "apple", env: undefined}
 ```
-To get Deno's executable path, use `Deno.execPath` function:
+- Use `Deno.execPath` function to get Deno's executable path:
 ```ts
 Deno.execPath();
 ///usr/local/bin/deno
 ```
+- Use `import.meta` object to get information on the main module (main will be false for workers):
+```ts
+import.meta;
+//{ url: "file:///Users/mayankc/Work/source/denoExamples/a.ts", main: true }
+```
 
 ## Permissions
-Deno runs in a sandboxed environment. Unless enabled, there is no file, network, environment, or child process access. The permissions can be enabled through `--allow-XXX` command-line option. A `PermissionDenied` error would be raised at runtime if the user program tries to access a resource outside the sandbox.
+Deno runs in a sandboxed environment. Unless explicitly enabled, there is no file, network, environment, or child process access. The permissions can be enabled through `--allow-XXX` command-line option. A `PermissionDenied` error would be raised at __runtime__ if the user program tries to access a resource outside the sandbox.
 
 |Permission Flag|Type|Description  |Examples|
 |--|--|--|--|
@@ -122,24 +217,23 @@ Deno runs in a sandboxed environment. Unless enabled, there is no file, network,
 
 
 ## Command line args
-The command line args are present in an array `Deno.args`. All the command line args are copied as is (no parsing is done).
+- Use `Deno.args` object to get the command-line arguments passed to the application (array of strings). All the command line args are copied as is (no parsing is done):
 ```ts
 deno run a.ts -a 1 -b 2 -c d -e -f -g
 //["-a", "1",  "-b", "2",  "-c", "d", "-e", "-f", "-g"]
 ```
 
 ## Environment variables
-`Deno.env` object contains useful functions `get`(get single env), `toObject`(get all), and `set` (set env) to work with environment variables. 
+- Use `Deno.env` object's functions to `get`(get single env), `toObject`(get all envs), and `set` (set env) the environment variables:
 ```ts
-Deno.env.get('ENV1');
-//VAR1
+Deno.env.get('ENV1'); //VAR1
 Deno.env.set('ENV1', 'VAR2');
 Deno.env.toObject();
 //{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... ....ENV1: "VAR1"}
 ```
 
 ## Reader, Writer, Seeker, and Closer
-Any resource in Deno can implement either of the available standard interfaces depending on the type of resource:
+Any resource in Deno can implement either of the available standard interfaces depending on the type of resource. This way resources can be accessed through generic methods.
 
 |Type|Functionality  |Methods|
 |--|--|--|
@@ -148,16 +242,45 @@ Any resource in Deno can implement either of the available standard interfaces d
 |Seekers|These support positioning of read pointer for the next read operation|`seek` and `seekSync`
 |Closer|Close the resource|`close`
 
-Here are some resources with their interfaces:
+Here are some common resources with their supported interfaces:
 
 |Resource|Interfaces  |
 |--|--|
-|stdin  |reader, closer  |
-|stdout|writer, closer|
-|stderr|writer, closer|
-|File|reader, writer, seeker, closer|
-|Buffer|reader, writer|
-|Conn|reader, writer, closer|
+|`stdin`  |reader, closer  |
+|`stdout`|writer, closer|
+|`stderr`|writer, closer|
+|`File`|reader, writer, seeker, closer|
+|`Buffer`|reader, writer|
+|`Conn`|reader, writer, closer|
+
+- Use `Deno.read/Deno.readSync` to get a chunk of data from any resource implementing reader interface:
+```ts
+const buf=new Uint8Array(5);
+const file=await Deno.open('/var/tmp/a.txt');
+await Deno.read(file.rid, buf);
+//buf: Uint8Array(5) [ 49, 50, 51, 52, 53 ]
+await Deno.read(Deno.stdin.rid, buf);
+//User input: ABCD
+//buf: Uint8Array(5) [ 65, 66, 67, 68, 10 ]
+```
+- Use `Deno.write/writeSync` to write a chunk of data to any resource implementing writer interface:
+```ts
+const buf=new Uint8Array(5).fill(65);
+const file=await Deno.open('/var/tmp/a.txt', {write: true});
+await Deno.write(file.rid, buf); //cat /var/tmp.txt -> AAAAA67890
+await Deno.write(Deno.stderr.rid, buf); //AAAAA
+```
+- Use `Deno.seek/Deno.seekSync` to move cursor to any position in any resource implementing seeker interface:
+```ts
+await Deno.seek(file.rid, 6, Deno.SeekMode.Start);
+await Deno.seek(file.rid, 6, Deno.SeekMode.Current);
+await Deno.seek(file.rid, -6, Deno.SeekMode.End); //minus to move back
+```
+- Use `Deno.close` to close any resource implementing closer interface:
+```ts
+Deno.close(file.rid);
+Deno.close(Deno.stdin.rid); //no more input needed
+```
 
 
 ## Built-in resources
@@ -165,26 +288,23 @@ Deno treats files, streams, sockets, etc. as resources. When a file is opened, o
 
 |Resource|Rid|Type|
 |--|--|--|
-|stdin  |0|read
-|stdout|1|write
-|stderr|2|write
+|`stdin`  |0|read
+|`stdout`|1|write
+|`stderr`|2|write
 
 Depending on the resource type, it implements the reader or writer interface. Therefore, the built-in resources can be read or written directly.
 
-
 ```ts
 await Deno.stdout.write(new TextEncoder().encode('abcd'));
-
 await Deno.stderr.write(new TextEncoder().encode('Error occured:xyx'));
-
 const buf=new Uint8Array(10);
-await Deno.stdin.read(buf);
+await Deno.stdin.read(buf); //reads input till user presses enter
 ```
 
 ## File ops
-Deno supports two types of standard file operations:
-- *Low level*: opening, reading, writing, seeking, and closing a file
-- *High level*: read or write a file directly (Deno takes care of opening, closing, etc.)
+Deno supports two types of file operations:
+- __Low level__: User takes care of opening, reading, writing, seeking, and closing the file
+- __High level__: User reads or writes the file directly (Deno takes care of opening, closing, seeking, etc.)
 
 Here are the file ops, both low-level and high-level:
 
@@ -196,13 +316,13 @@ const file=await Deno.open('/var/tmp/a.txt');
 ```ts
 const file=await Deno.create('/var/tmp/a.txt');
 ```
- - `read/readSync`: Reads a block of data from the opened file from the current cursor position
+ - `read/readSync`: Reads a block of data from the opened file starting from the current cursor position
 ```ts
 const file=await Deno.open('/var/tmp/a.txt');
 const buf=new Uint8Array(1000);
 await file.read(buf); //or Deno.read(file.rid, data)
 ```
-- `write/writeSync`: Writes a block of data into the opened file at the cursor position
+- `write/writeSync`: Writes a block of data into the opened file starting at the cursor position
 ```ts
 const file=await Deno.open('/var/tmp/a.txt', {create:true, write:true});
 await file.write(new TextEncoder().encode('abcd')); //or Deno.write(file.rid, data);
@@ -216,7 +336,7 @@ await file.seek(4, Deno.SeekMode.Start);
 file.writeSync(data); //abcdabcd
 await file.seek(4, Deno.SeekMode.Current);
 await file.write(data); //abcdabcdabcd
-await file.seek(-4, Deno.SeekMode.End);
+await file.seek(-4, Deno.SeekMode.End); //move back
 await file.write(data); //abcdabcdabcd
 ```
 - `close`: Closes the resource
@@ -457,7 +577,7 @@ const file=await Deno.open('/var/tmp/child.txt', {write: true});
 await writeAll(file, new Uint8Array(5).fill(65));
 //cat /var/tmp/child.txt -> AAAAA world
 ```
--`iter/iterSync`: Create an asynchronous (or synchronous) iterator for a given reader. It reads in chunks with a default size unless specified in options.
+- `iter/iterSync`: Create an asynchronous (or synchronous) iterator for a given reader. It reads in chunks with a default size unless specified in options.
 ```ts
 const file=await Deno.open('/var/tmp/child.txt');
 for await(const c of iter(file))
@@ -469,7 +589,63 @@ for await(const val of iter(file, {bufSize:6}))
 //Uint8Array(6) [ 119, 111, 114, 108, 100, 10 ]
 ```
 
-## TextEncoder and TextDecoder
+## Network ops
+Deno supports HTTP, TCP, UDP, and WebSocket client/servers. Some of the ops are a part of the core runtime, while others are implemented in standard library.
+
+- Use `fetch` to fetch data through HTTP (aka HTTP client)
+```ts
+const res=await fetch("https://localhost:3000", {
+    body: JSON.stringify({name: 'Mayank'})
+});
+if(res.ok) {
+    await res.text(); //String -> {"name":"Mayank"}
+    await res.json(); //JSON object -> { name: "Mayank" }
+    await res.formData(); //FormData -> FormData { [Symbol(data)]: [ [ "name", "Mayank" ] ] }
+}
+```
+- Use `listen/listenTls` to create a low-level TCP server (For HTTP servers,  use `serve/serveTls` instead)
+```ts
+const listener = Deno.listen({ hostname: "127.0.0.1", port: 5566 });
+const conn=await listener.accept();
+await Deno.copy(conn, conn); //conn is both reader and writer
+conn.close();
+listener.close();
+//--
+const listener = Deno.listenTls({ hostname: "127.0.0.1", port: 5566, certFile: "./c.crt", keyFile: "./k.key" });
+```
+- Use `listenDatagram` to create a UDP server
+```ts
+const server = Deno.listenDatagram({ port: 3000, transport: "udp" });
+while (true) {
+  const [recvd, remote] = await server.receive();
+  await server.send(recvd, remote); //echo it back
+}
+```
+- Use `connect/connectTls` to create a TCP client without or with TLS
+```ts
+const conn=await Deno.connect({port: 4544 });
+await conn.write(new TextEncoder().encode("ABCD"));
+const buf=new Uint8Array(100);
+const n=await conn.read(buf);
+//buf: Uint8Array(4) [ 65, 66, 67, 68 ]
+//--
+const conn=await Deno.connectTls({hostname: 'localhost', port: 4544, certFile: './server.crt' });
+```
+
+- Use `serve/serveTls` to create HTTP servers without or with TLS
+```ts
+import { serve } from "https://deno.land/std/http/server.ts";
+for await (const req of serve({port:3000}))
+    req; //do something with request 
+//--
+import { serveTLS } from "https://deno.land/std/http/server.ts";
+for await (const req of serveTLS({port:3000, certFile: "./c.crt", keyFile: "./k.key"}))
+    req; //do something with request
+```
+
+## System info
+
+## Encoding and decoding
 Deno comes with the web's standard `TextEncoder` and `TextDecoder` to convert data from string to Uint8Array and vice versa. These are very useful in working with file, buffer, and socket ops.
 
 ```ts
@@ -525,7 +701,7 @@ Deno.sleepSync(100);
 
 - `none`: Ignore
 - `pipe`: Redirect to the parent process
-- `inherit`: Use parent's process's settings
+- `inherit`: Use parent's process's settings (default)
 - `number`: Redirect to given `rid`
 
 The `Deno.run()` function call returns a process object. This process object can be used to check the status of the child process, get piped output, and terminate it if needed. The process object has a `status` function that would resolve when the child process is done.
@@ -642,3 +818,5 @@ test second test ... ok (116ms)
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out (118ms)
 ```
+
+
