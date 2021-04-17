@@ -7,45 +7,17 @@
 
 > All the sample code is shown for async calls wherever the function is available in both async and sync variants, otherwise, it's sync. Sync calls are mentioned wherever they are available.
 
-- [Introduction](#introduction)
-- [Installation](#installation)
-  * [Direct](#direct)
-  * [Package manager](#package-manager)
-- [Upgrade](#upgrade)
-- [Commands](#commands)
-- [Version, build, paths and other info](#version-build-paths-and-other-info)
-- [Permissions](#permissions)
-- [Command line args](#command-line-args)
-- [Environment variables](#environment-variables)
-- [Reader, Writer, Seeker, and Closer](#reader-writer-seeker-and-closer)
-- [Built-in resources](#built-in-resources)
-- [File ops](#file-ops)
-- [File system ops](#file-system-ops)
-- [Buffer ops](#buffer-ops)
-- [ReadAll, WriteAll, and Iter](#readall-writeall-and-iter)
-- [Network ops](#network-ops)
-- [System info](#system-info)
-- [Encoding and decoding](#encoding-and-decoding)
-- [Get random values](#get-random-values)
-- [Process ops](#process-ops)
-- [Child Process](#child-process)
-- [User interaction](#user-interaction)
-- [Metrics](#metrics)
-- [Deno specific errors](#deno-specific-errors)
-- [Unit testing](#unit-testing)
-
 ## Introduction
 Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses V8 and is built in Rust. Deno is a complete toolchain that ships as a single executable. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was made generally available in May'2020. The latest release of Deno is `1.9.0`.
 
 ## Installation
 Deno installs as a single executable with no dependencies. It can be easily installed either directly or using package managers on all the supported platforms.
 
-### Direct
-For Mac and Linux, use `curl` and `shell` commands:
+- For Mac and Linux, use `curl` and `shell` commands:
 
 `curl -fsSL https://deno.land/x/install/install.sh |  sh` 
 
-For windows, use `powershell` command:
+- For windows, use `powershell` command:
 
 `iwr https://deno.land/x/install/install.ps1 -useb | iex`
 
@@ -56,8 +28,8 @@ An installation error may come if `unzip`is not installed on Mac or Linux. To in
 |Mac  |`brew install unzip` 
 |Linux|`apt-get install unzip -y`
 
+- Use following OS specific package manager to install Deno
 
-### Package manager
 |OS|Installation command  |
 |--|--|
 |Mac  | `brew install deno` |
@@ -65,7 +37,9 @@ An installation error may come if `unzip`is not installed on Mac or Linux. To in
 |Windows|`scoop install deno`
 
 ## Upgrade
-As Deno is a complete toolchain within a single executable, the upgrade is also available through a built-in command. To upgrade Deno, simply use:
+As Deno is a complete toolchain within a single executable, the upgrade is also available through a built-in command. 
+
+- To upgrade Deno, simply use:
 
 |Upgrade To|Command  |
 |--|--|
@@ -207,6 +181,24 @@ deno install -f --root /tmp -n app app.ts
 /private/tmp/bin/app
 ```
 
+## Imports
+Deno supports only the ES6 style imports (`import`). It doesn't support commonjs style of importing (`require`).
+
+- Use `import` statement to statically import modules
+```ts
+import { serve } from "https://deno.land/std/http/server.ts";
+```
+- Use `import` function to dynamically import modules at runtime
+```ts
+let serveFunc;
+if(true /*some condition*/) {
+    const {serve}=await import("https://deno.land/std/http/server.ts");
+    serveFunc=serve;
+} else {
+    serveFunc=/*some other dynamic import*/
+}
+```
+
 ## Version, build, paths and other info
 - Use `Deno.version` object to get the versions of Deno, Typescript, and V8 (Note: It's an object, not a function):
 
@@ -249,6 +241,13 @@ Deno runs in a sandboxed environment. Unless explicitly enabled, there is no fil
 ```ts
 deno run a.ts -a 1 -b 2 -c d -e -f -g
 //["-a", "1",  "-b", "2",  "-c", "d", "-e", "-f", "-g"]
+```
+- Use standard library's `flags` module to parse command-line args into usable format
+```ts
+import { parse } from "https://deno.land/std@$STD_VERSION/flags/mod.ts";
+parse(Deno.args);
+//deno run a.ts -a 1 -b 2 -c d -e -f -g
+//{ _: [], a: 1, b: 2, c: "d", e: true, f: true, g: true }
 ```
 
 ## Environment variables
@@ -541,6 +540,45 @@ await Deno.fsync(file.rid);
 await Deno.utime('/var/tmp/a.txt', new Date(), new Date());
 //-rw-r--r--  1 mayankc  wheel  11 Apr 16 12:36 /var/tmp/a.txt
 ```
+- Use standard library's `fs` module's `copy/copySync` functions to recursively copy a directory
+```ts
+//ls -FR dir1 -> dir2/	file3 dir1/dir2: file1	file2
+import { copy } from "https://deno.land/std/fs/mod.ts";
+await copy("/var/tmp/dir1", "/var/tmp/dir5");
+//ls -FR dir5 -> dir2/	file3 dir5/dir2: file1	file2
+```
+- Use standard library's `fs` module's `emptyDir/emptyDirSync` functions to ensure an empty directory (if directory is not empty, it'd be emptied, or if directory doesn't exists, it'd be created)
+```ts
+import { emptyDir } from "https://deno.land/std/fs/mod.ts";
+await emptyDir("/var/tmp/dir5");
+//ls -ltr /var/tmp/dir5/ -> 
+```
+- Use standard library's `fs` module's `ensureDir/ensureDirSync/ensureFile/ensureFileSync` functions to create a directory structure (just like `mkdir -p`)
+```ts
+import { ensureDir, ensureFile } from "https://deno.land/std/fs/mod.ts";
+await ensureDir("/var/tmp/dir5/dir6/dir7/dir8");
+//ls -FR /var/tmp/dir5 -> dir6/ /var/tmp/dir5/dir6: dir7/ /var/tmp/dir5/dir6/dir7: dir8/
+await ensureFile("/var/tmp/dir9/dir10/file11");
+//ls -FR /var/tmp/dir9 -> dir10/ /var/tmp/dir9/dir10: file11
+```
+- Use standard library's `fs` module's `exists/existsSync` functions to check if a path exists (directory or file)
+```ts
+import { exists } from "https://deno.land/std/fs/mod.ts";
+await exists("/var/tmp/dir9/dir10/file11"); //true
+await exists("/var/tmp/dir5/dir6/dir7/dir8"); //true
+await exists("/var/tmp/dir5/dir6/dir7/dir8/dir9"); //false
+```
+- Use standard library's `fs` module's `walk/walkSync` functions to recursively process every file/directory/symlink present inside a given path
+```ts
+import { walk } from  "https://deno.land/std/fs/mod.ts";
+for await (const entry of walk("/var/tmp/dir1"))
+    entry;
+//{path: "/var/tmp/dir1", name: "dir1", isFile: false, isDirectory: true, isSymlink: false}
+//{path: "/var/tmp/dir1/file3", name: "file3", isFile: true, isDirectory: false, isSymlink: false}
+//{path: "/var/tmp/dir1/dir2", name: "dir2", isFile: false, isDirectory: true, isSymlink: false}
+//{path: "/var/tmp/dir1/dir2/file2", name: "file2", isFile: true, isDirectory: false, isSymlink: false}
+//{path: "/var/tmp/dir1/dir2/file1", name: "file1", isFile: true, isDirectory: false, isSymlink: false}
+```
 
 ## Buffer ops
 Buffer is a simple data storage that provides a way to store and retrieve data. Deno's buffer has a cursor to keep track of the next read/write operation. It can grow as needed. Usually, Buffers are initialized from a data source like a file or socket and then are read as needed. From v1.9.0, `Buffer` has been moved to the standard library. 
@@ -723,18 +761,31 @@ Deno.systemCpuInfo(); //{ cores: 8, speed: 1400 }
 - Use `
 
 ## Encoding and decoding
-Deno comes with the web's standard `TextEncoder` and `TextDecoder` to convert data from string to Uint8Array and vice versa. These are very useful in working with file, buffer, and socket ops.
-
+- Use web's standard `TextEncoder` and `TextDecoder` to convert data from string to Uint8Array and vice versa. These are very useful in working with file, buffer, and socket ops.
 ```ts
 new TextEncoder().encode('ABCD');
 //Uint8Array(4) [ 65, 66, 67, 68 ]
 new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ]));
 //ABCD
 ```
+- Use standard library's `base64` module to encode and decode base64 data
+```ts
+import { decode, encode } from "https://deno.land/std/encoding/base64.ts";
+const e=encode("ABCDE");
+const d=decode(e); //or, new TextDecoder().decode(decode(e)); to get string
+//e: QUJDREU=     d: Uint8Array(5) [ 65, 66, 67, 68, 69 ]
+```
 
-## Get random values
-Deno's crypto comes with web's `getRandomValues` function to generate cryptographically strong random numbers. This function fills the input array with 8/16/32 bit random numbers.
-
+## Hash, UUID, and random values
+- Use standard library's `hash` module's `createHash, update, toString` functions to create a hash of a given string
+```ts
+import { createHash } from "https://deno.land/std/hash/mod.ts";
+createHash("md5").update("ABCD").toString(); //cb08ca4a7bb5f9683c19133a84872ca7
+createHash("sha1").update("ABCD").toString(); //fb2f85c88567f3c8ce9b799c7c54642d0c7b41f6
+createHash("sha256").update("ABCD").toString(); //e12e115acf4552b2568b55e93cbd39394c4ef81c82447fafc997882a02d23677
+createHash("sha512").update("ABCD").toString(); //49ec55bd83fcd67838e3d385ce831669e3f815a7f44b7aa5f8d52b5d42354c46d89c8b9d06e47a797ae4fbd22291be15bcc35b07735c4a6f92357f93d5a33d9b
+```
+- Use `crypto.getRandomValues` function to generate cryptographically strong random numbers. This function fills the input array with 8/16/32 bit random numbers.
 ```ts
 const rv=new Uint8Array(5);
 crypto.getRandomValues(rv);
@@ -830,6 +881,78 @@ const val3=confirm('Are you sure?');
 //Are you sure? [y/N]
 ```
 
+## Utilities
+- Use standard library's `tar` utlity to create/untar tar files
+```ts
+import { Tar } from "https://deno.land/std/archive/tar.ts";
+import { Buffer } from "https://deno.land/std/io/buffer.ts";
+const content = new TextEncoder().encode("A tar file sample!");
+const tar=new Tar();
+tar.append("a1.txt", {filePath: "/var/tmp/a1.txt"});
+tar.append("a2.txt", {reader: new Buffer(content), contentSize: content.byteLength});
+const file = await Deno.open("/var/tmp/a.tar", { create: true, write: true });
+await Deno.copy(tar.getReader(), file);
+file.close();
+//tar -tf /var/tmp/a.tar -> a1.txt a2.txt
+```
+- Use standard library's `deferred` promise to create resolvable promises i.e. a promise that contains `resolve` and `reject` functions
+```ts
+import { deferred } from "https://deno.land/std/async/deferred.ts";
+const ds=deferred<string>(), di=deferred<number>();
+//.....
+ds.resolve("ABCD");
+di.reject(1);
+```
+
+## Logger
+Deno's standard library comes with a feature-rich logger to log messages at different destinations/formats/etc. The logger also supports custom log 
+handlers, rotating of log files, log formatting, etc. The logger accepts any type of data.
+
+- Use default logger to write log messages on the console
+```ts
+import * as log from "https://deno.land/std/log/mod.ts";
+
+log.debug("ABCD"); //DEBUG ABCD
+log.info({data: "ABCD"}); //INFO {"data":"ABCD"}
+log.warning(5000); //WARNING 5000
+log.error({data: {err: "MESSAGE"}}); //ERROR {"data":{"err":"MESSAGE"}}
+log.critical("ABCD"); //CRITICAL ABCD
+```
+- Use `RotatingFileHandler` to direct log messages to files that would rotate after reaching a maximum size and maintains a given number of rotating files (aka backups)
+```ts
+import * as log from "https://deno.land/std/log/mod.ts";
+await log.setup({
+    handlers: {
+        file: new log.handlers.RotatingFileHandler("DEBUG", {
+            filename: "./log.txt",
+            maxBytes: 50,
+            maxBackupCount: 3,
+            mode: "w"
+      }),
+    },
+    loggers: {
+        default: {
+          level: "DEBUG",
+          handlers: ["file"],
+        }
+    }
+});
+
+log.debug("ABCD");
+log.info({data: "ABCD"});
+log.warning(5000);
+log.error({data: {err: "MESSAGE"}});
+log.critical("ABCD");
+//cat log.txt
+//ERROR {"data":{"err":"MESSAGE"}}
+//CRITICAL ABCD
+//cat log.txt.1 
+//DEBUG ABCD
+//INFO {"data":"ABCD"}
+//WARNING 5000
+```
+
+
 ## Metrics
 To get details of the async/sync ops that have been sent, responded, etc. during the lifecycle of the program, use `Deno.metrics()`:
 
@@ -905,5 +1028,6 @@ test second test ... ok (116ms)
 
 test result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out (118ms)
 ```
+
 
 
