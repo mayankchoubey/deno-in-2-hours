@@ -1,5 +1,3 @@
-
-
 ![](https://github.com/mayankchoubey/deno-in-2-hours/blob/ebbba967ddd3abd2593069bc794c70ab21fbc3a8/deno%20in%202%20hours%20-%20cover.png)
 
 
@@ -726,9 +724,87 @@ await Deno.resolveDns("www.facebook.com", "A"); //[ "69.171.250.35" ]
 await Deno.resolveDns("www.facebook.com", "AAAA"); //[ "2a03:2880:f1ff:83:face:b00c:0:25de" ]
 await Deno.resolveDns("www.facebook.com", "CNAME"); //[ "star-mini.c10r.facebook.com." ]
 ```
+- Use standard library's `ws` module to create a websocket server. Websocket client follows the web standards.
+```ts
+//ECHO_WS_SERVER.ts
+import { serve } from "https://deno.land/std/http/server.ts";
+import { acceptWebSocket, isWebSocketCloseEvent } from "https://deno.land/std/ws/mod.ts";
+for await (const req of serve(":5000")) {
+    const { conn, r: bufReader, w: bufWriter, headers } = req;
+    const ws=await acceptWebSocket({conn, bufReader, bufWriter, headers});
+    for await(const e of ws) {
+        if(isWebSocketCloseEvent(e))
+            break;
+        ws.send(e as string|Uint8Array); //e: SAMPLE DATA
+    }
+}
+//ECHO_CLIENT.TS
+const ws=new WebSocket('ws://localhost:5000');
+ws.onopen=()=>ws.send("SAMPLE DATA");
+ws.onmessage=(m)=>ws.close(); //m.data: SAMPLE DATA
+ws.onclose=()=>console.log('Exited'); //Exited
+```
 - Use`Deno.shutdown` to close the socket
 ```ts
 Deno.shutdown(conn.rid);
+```
+
+## Paths
+Deno's standard library comes with a `path` module that contains several useful functions to parse, extract info, and build paths.
+
+```ts
+import * as path from "https://deno.land/std/path/mod.ts";
+```
+
+- Use `basename` to get the end of the path (could be directory or file)
+```ts
+path.basename("/var/tmp/a/b/d.txt"); //d.txt
+path.basename("/var/tmp/a/b/"); //b
+```
+- Use `dirname` to get the path of the directory containing the basename of the path
+```ts
+path.dirname("/var/tmp/a/b/d.txt"); // /var/tmp/a/b
+path.dirname("/var/tmp/a/b/"); // /var/tmp/a
+```
+- Use `extname` to get the extension of the path (return empty string if path's basename is a directory)
+```ts
+path.extname("/var/tmp/a/b/d.txt"); //.txt
+path.extname("/var/tmp/a/b/"); //
+```
+- Use `fromFileUrl` to convert a `file://` path into a local path
+```ts
+path.fromFileUrl("file:///var/tmp/a/b/d.txt"); // /var/tmp/a/b/d.txt
+path.fromFileUrl("file:///var/tmp/a/b"); // /var/tmp/a/b
+```
+- Use `isAbsolute` to find if a path is relative or absolute
+```ts
+path.isAbsolute("/var/tmp/a/b/d.txt"); //true
+path.isAbsolute("./a/b"); //false
+```
+- Use `join` to combine paths into a single path (usually it'd be a base path and then paths relative to base paths)
+```ts
+path.join("/var/tmp/a", "/b/c.txt"); // /var/tmp/a/b/c.txt
+path.join("./data/", "/d/e", "f.txt"); // data/d/e/f.txt
+```
+- Use `normalize` to convert any arbitrary relative path to a normal relative path (append relative paths containing `.` or `..` and then normalize it)
+```ts
+path.normalize("./a/b"); // a/b
+path.normalize("../data/a/./b/c/../d/e"); // ../data/a/b/d/e
+```
+- Use `parse` to convert any path into a path object that is useful in getting all the useful info together like basename, dirname, extname, root
+```ts
+path.parse("./a/b/c"); //{ root: "", dir: "./a/b", base: "c", ext: "", name: "c" }
+path.parse("/var/tmp/a/b/c/d/e.txt"); //{ root: "/", dir: "/var/tmp/a/b/c/d", base: "e.txt", ext: ".txt", name: "e" }
+```
+- Use `resolve` to convert relative (to `cwd`) path segments into a single absolute path
+```ts
+path.resolve("./a/b/c", "d/", "e.txt"); // /Users/mayankc/Work/source/denoExamples/a/b/c/d/e.txt
+path.resolve("../../a/b/c", "d/e/f", "g/h", "i.txt"); // /Users/mayankc/Work/a/b/c/d/e/f/g/h/i.txt
+```
+- Use `toFileUrl` to convert a local path to a file URL `file://` (It returns a URL object, use `toString` to get a path)
+```ts
+console.log(path.toFileUrl("/var/tmp/a").toString()); //file:///var/tmp/a
+console.log(path.toFileUrl("/data/a/b/c.txt").toString()); //file:///data/a/b/c.txt
 ```
 
 ## System info
@@ -758,7 +834,6 @@ Deno.systemMemoryInfo();
 ```ts
 Deno.systemCpuInfo(); //{ cores: 8, speed: 1400 }
 ```
-- Use `
 
 ## Encoding and decoding
 - Use web's standard `TextEncoder` and `TextDecoder` to convert data from string to Uint8Array and vice versa. These are very useful in working with file, buffer, and socket ops.
@@ -768,12 +843,21 @@ new TextEncoder().encode('ABCD');
 new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ]));
 //ABCD
 ```
-- Use standard library's `base64` module to encode and decode base64 data
+- Use standard library's `encoding/base64` module to encode and decode base64 data
 ```ts
 import { decode, encode } from "https://deno.land/std/encoding/base64.ts";
 const e=encode("ABCDE");
 const d=decode(e); //or, new TextDecoder().decode(decode(e)); to get string
 //e: QUJDREU=     d: Uint8Array(5) [ 65, 66, 67, 68, 69 ]
+```
+- Use standard library's `encoding/hex` module to encode and decode hex data
+```ts
+import { encode, encodeToString, decode, decodeString } from "https://deno.land/std/encoding/hex.ts";
+const data=new TextEncoder().encode("ABCD1234");
+const e=encodeToString(data); //e: 4142434431323334
+const f=encode(data); //f: Uint8Array(16) [52, 49, 52, 50, 52, 51, 52, 52, 51, 49, 51, 50, 51, 51, 51, 52]
+const g=decode(f); //g: Uint8Array(8) [65, 66, 67, 68, 49, 50, 51, 52]
+const h=new TextDecoder().decode(decodeString(e)); //h: ABCD1234
 ```
 
 ## Hash, UUID, and random values
@@ -784,6 +868,15 @@ createHash("md5").update("ABCD").toString(); //cb08ca4a7bb5f9683c19133a84872ca7
 createHash("sha1").update("ABCD").toString(); //fb2f85c88567f3c8ce9b799c7c54642d0c7b41f6
 createHash("sha256").update("ABCD").toString(); //e12e115acf4552b2568b55e93cbd39394c4ef81c82447fafc997882a02d23677
 createHash("sha512").update("ABCD").toString(); //49ec55bd83fcd67838e3d385ce831669e3f815a7f44b7aa5f8d52b5d42354c46d89c8b9d06e47a797ae4fbd22291be15bcc35b07735c4a6f92357f93d5a33d9b
+```
+- Use standard library's `uuid` module to generate & validate v1, v4, and v5 UUIDs (v4 is completely random, v5 produces the same uuid if the same options are given)
+```ts
+import * as uuid from "https://deno.land/std/uuid/mod.ts";
+uuid.v1.generate(); //ce750730-9f9d-11eb-b120-0738fc55abf6
+uuid.v4.generate(); //770bb8bb-1caf-4f24-a473-e3ef83e791c8
+uuid.v5.generate({value: "Hello, World", namespace: "1b671a64-40d5-491e-99b0-da01ff1f3341"}); //4b4f2adc-5b27-57b5-8e3a-c4c4bcf94f05
+uuid.v1.validate("770bb8bb-1caf-4f24-a473-e3ef83e791c8"); //false
+uuid.v4.validate("770bb8bb-1caf-4f24-a473-e3ef83e791c8"); //true
 ```
 - Use `crypto.getRandomValues` function to generate cryptographically strong random numbers. This function fills the input array with 8/16/32 bit random numbers.
 ```ts
@@ -806,7 +899,7 @@ Deno.pid;
 Deno.ppid;
 //81921
 ```
-- To abruptly exit the running process, use `Deno.exit` function (an exit code is required):
+- Use `Deno.exit` to abruptly exit the running process (an exit code is required)
 ```ts
 //a.ts
 setTimeout(() => {
@@ -817,9 +910,14 @@ setTimeout(() => {
 shell > deno run a.ts
 shell > //the line never gets printed
 ```
-- To synchronously sleep current thread for given milliseconds, use `Deno.sleepSync`:
+- Use `Deno.sleepSync` to synchronously sleep current thread for given milliseconds
 ```ts
 Deno.sleepSync(100);
+```
+- Use standard library's `async` module's `delay` function to asynchronously sleep current thread for given milliseconds
+```ts
+import { delay } from "https://deno.land/std/async/mod.ts";
+await delay(5000);
 ```
 - Use `Deno.kill` to send a signal to a given process id
 ```ts
