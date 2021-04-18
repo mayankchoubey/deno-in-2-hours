@@ -1,21 +1,50 @@
 ![](https://github.com/mayankchoubey/deno-in-2-hours/blob/96aee24246f2b2c74ad3d319225f2b5ccf756c21/cover-deno-in-2-hours.png)
 
 
-> Learn all about Deno in just 2 hours
+> Learn about Deno core and standard library in just 2 hours
 
-> All the sample code is shown for async calls wherever the function is available in both async and sync variants, otherwise, it's sync. Sync calls are mentioned wherever they are available.
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Upgrade](#upgrade)
+- [Commands](#commands)
+- [Imports](#imports)
+- [Third-party packages](#third-party-packages)
+- [Version, build, paths and other info](#version-build-paths-and-other-info)
+- [Permissions](#permissions)
+- [Command line args](#command-line-args)
+- [Environment variables](#environment-variables)
+- [Reader, Writer, Seeker, and Closer](#reader-writer-seeker-and-closer)
+- [Built-in resources](#built-in-resources)
+- [File ops](#file-ops)
+- [File system ops](#file-system-ops)
+- [Buffer ops](#buffer-ops)
+- [ReadAll, WriteAll, and Iter](#readall-writeall-and-iter)
+- [Network ops](#network-ops)
+- [Paths](#paths)
+- [System info](#system-info)
+- [Encoding and decoding](#encoding-and-decoding)
+- [Hash, UUID, and random values](#hash-uuid-and-random-values)
+- [Process ops](#process-ops)
+- [Child Process](#child-process)
+- [User interaction](#user-interaction)
+- [Utilities](#utilities)
+- [Logger](#logger)
+- [Metrics](#metrics)
+- [Unit testing](#unit-testing)
+- [Deno specific errors](#deno-specific-errors)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 ## Introduction
-Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses V8 and is built in Rust. Deno is a complete toolchain that ships as a single executable. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was made generally available in May'2020. The latest release of Deno is `1.9.0`.
+Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses Google’s V8 engine and is built in Rust. Deno is a complete toolchain that ships as a single executable with no dependencies. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was generally available in May'2020. The latest release of Deno is `1.9.0`.
 
 ## Installation
-Deno installs as a single executable with no dependencies. It can be easily installed either directly or using package managers on all the supported platforms.
+Deno installs as a single executable with no dependencies. It can be easily installed either directly or using package managers on all the supported platforms: Mac, Linux, and Windows.
 
-- For Mac and Linux, use `curl` and `shell` commands:
+- Use `curl/shell` or `powershell` commands to install on Mac/Linux or Windows
 
 `curl -fsSL https://deno.land/x/install/install.sh |  sh` 
-
-- For windows, use `powershell` command:
 
 `iwr https://deno.land/x/install/install.ps1 -useb | iex`
 
@@ -26,7 +55,7 @@ An installation error may come if `unzip`is not installed on Mac or Linux. To in
 |Mac  |`brew install unzip` 
 |Linux|`apt-get install unzip -y`
 
-- Use following OS specific package manager to install Deno
+- Use the following OS-specific package manager to install Deno
 
 |OS|Installation command  |
 |--|--|
@@ -35,9 +64,9 @@ An installation error may come if `unzip`is not installed on Mac or Linux. To in
 |Windows|`scoop install deno`
 
 ## Upgrade
-As Deno is a complete toolchain within a single executable, the upgrade is also available through a built-in command. 
+As Deno is a complete toolchain within a single executable, the upgrade manager is also available through a built-in command present in the Deno executable.
 
-- To upgrade Deno, simply use:
+- Use `deno upgrade` to upgrade Deno to either latest or a specific version
 
 |Upgrade To|Command  |
 |--|--|
@@ -45,26 +74,26 @@ As Deno is a complete toolchain within a single executable, the upgrade is also 
 |A particular version|`deno upgrade --version 1.8.3`
 
 ## Commands
-Deno provides all its functionality through a large number of commands. The commands range from running the application, testing, upgrade, formatting, etc.
+Deno provides all its functionality through a large number of commands. The commands range from running the application, unit testing, upgrading, formatting, bundling, etc.
 
 |Command|Use  |
 |--|--|
-|`run`  |Executes application  |
-|`fmt`|Fixes indentation|
-|`types`|Print runtime TypeScript declarations|
-|`cache`|Cache and compile remote dependencies recursively|
-|`coverage`|Prints coverage report from coverage profiles|
-|`info`|Prints information about a module, dependencies, caches, etc.|
-|`eval`|Evaluate a small piece of code|
-|`repl`|Runs a read, evaluate, and print loop|
-|`bundle`|Prepares a single Javascript file for the application and all the dependencies
+|`run`  |Executes application
+|`fmt`|Fixes indentation
+|`types`|Prints runtime TypeScript declarations
+|`cache`|Caches and compiles remote dependencies recursively
+|`coverage`|Prints coverage report from coverage profiles
+|`info`|Prints information about a module, dependencies, caches, etc.
+|`eval`|Evaluates a small piece of code
+|`repl`|Runs a read, evaluate, and print loop
+|`bundle`|Prepares a single Javascript file for the application including all the dependencies
 |`install`|Installs a script and its dependencies as a single executable
 |`completions`|Prints completion code for specified shell
 |`test`|Runs unit tests specified in `*test*.ts` files
 |`upgrade`|Upgrades Deno to latest or specified release
 |`doc`|Prints documentation for modules, functions, etc.
 |`lint`|Runs a linter
-|`compile`|Compiles the given script into a self-contained executable
+|`compile`|Compiles the given script and its dependencies into a self-contained executable
 |`lsp`|For interaction with editors and IDEs
 
 Some of the commonly used commands:
@@ -87,7 +116,7 @@ deno eval "'hello world'" -p
 //hello world
 ```
 
-- Use `fmt` command to fix indentation issues (it overwrites the file)
+- Use `fmt` command to fix indentation issues (it overwrites the original file)
 ```ts
 //Before app.ts
 import {abc,def} from "https://some.server.com";
@@ -112,6 +141,7 @@ for (const k of a) {
 
 - Use `cache` to download and cache all the dependencies
 ```ts
+//app.ts
 import { doze } from "https://deno.land/x/doze/mod.ts";
 //--
 deno cache app.ts
@@ -170,7 +200,7 @@ Bundle file:///private/var/tmp/myDir/app.ts
 Compile file:///private/var/tmp/myDir/app.ts
 Emit app
 ./app
-Hello from app { HW: "Hello from app1" } { HW: "Hello from app2" }
+//Hello from app { HW: "Hello from app1" } { HW: "Hello from app2" }
 ```
 - Use `install` to install an app as a self-contained executable at the specified path
 ```ts
@@ -185,6 +215,7 @@ Deno supports only the ES6 style imports (`import`). It doesn't support commonjs
 - Use `import` statement to statically import modules
 ```ts
 import { serve } from "https://deno.land/std/http/server.ts";
+import * as path from "https://deno.land/std/path/mod.ts";
 ```
 - Use `import` function to dynamically import modules at runtime
 ```ts
@@ -195,26 +226,49 @@ if(true /*some condition*/) {
 } else {
     serveFunc=/*some other dynamic import*/
 }
+serveFunc(5000);
+```
+
+## Third-party packages
+Deno doesn't have a package manager (the only missing piece in the complete toolchain). Instead, it supports downloading and importing packages/modules from anywhere (local or remote). There are three sources of third-party packages:
+
+- *Deno's standard library*: This isn't really a third-party package, but it isn't included in Deno by default as well (`https://deno.land/std/`);
+- *Deno aware third-party packages*: A large number of third-party packages are registered with Deno. They are made available through Deno's URL rewriting service (`https://deno.land/x/`);
+- *Other third-party packages*: The remaining ones are any third-party packages that are hosted anywhere in the world (GitHub, enterprise or personal web server, any CDN, etc.)
+
+There is an easy way to maintain all the package versions in a common place (like package.json).
+
+- Use `deps.ts` to maintain package/module versions in a common place
+```ts
+//deps.ts
+export * as path from "https://deno.land/std@0.90.0/path/mod.ts"; //A module from standard library
+export * as doze from "https://deno.land/x/doze@1.0/mod.ts"; //A deno aware third-party module
+export * as bodyparser from "https://raw.githubusercontent.com/mayankchoubey/deno-body-parser/1.0.0/mod.ts"; //Some other third party module
+```
+- Use `deps.ts` to import all the packages (do not import them directly)
+```ts
+//app.ts
+import { path, doze, bodyparser } from "./deps.ts";
+.....
 ```
 
 ## Version, build, paths and other info
-- Use `Deno.version` object to get the versions of Deno, Typescript, and V8 (Note: It's an object, not a function):
-
+- Use `Deno.version` object to get the versions of Deno, Typescript, and V8
 ```ts
 Deno.version;
 //{ deno: "1.9.0", v8: "9.1.269.5", typescript: "4.2.2" }
 ```
-- Use `Deno.build` object to get information about the Deno build being used:
+- Use `Deno.build` to get information about the Deno build being used
 ```ts
 Deno.build;
 //{target: "x86_64-apple-darwin", arch: "x86_64", os: "darwin", vendor: "apple", env: undefined}
 ```
-- Use `Deno.execPath` function to get Deno's executable path:
+- Use `Deno.execPath` function to get Deno's executable path
 ```ts
 Deno.execPath();
 ///usr/local/bin/deno
 ```
-- Use `import.meta` object to get information on the main module (main will be false for workers):
+- Use `import.meta` to get information on the main module (main will be false for workers):
 ```ts
 import.meta;
 //{ url: "file:///Users/mayankc/Work/source/denoExamples/a.ts", main: true }
@@ -226,8 +280,8 @@ Deno runs in a sandboxed environment. Unless explicitly enabled, there is no fil
 |Permission Flag|Type|Description  |Examples|
 |--|--|--|--|
 |`--allow-all`  |Boolean|Enables all access (no sandboxing)  |`deno run --allow-all app.ts`
-|`--allow-read`|List|Recurisvely enables read access to all (if list is empty) or given list of paths|`deno run --allow-read` app.ts or `deno run --allow-read=/var/,/tmp,/datastore
-|`--allow-write`|List|Recurisvely enables write access to all (if list is empty) or given list of paths|`deno run --allow-write` app.ts or `deno run --allow-write=/var/,/tmp,/datastore
+|`--allow-read`|List|Recurisvely enables read access to all (if list is empty) or given list of paths|`deno run --allow-read app.ts` or `deno run --allow-read=/var/,/tmp,/datastore app.ts`
+|`--allow-write`|List|Recurisvely enables write access to all (if list is empty) or given list of paths|`deno run --allow-write app.ts` or `deno run --allow-write=/var/,/tmp,/datastore app.ts`
 |`--allow-net`|List|Enables access to all (if list is empty) or given networks|`deno run --allow-net app.ts` or `deno run --allow-net=10.1.1.0,api.abc.com,api.xyz.com,internal.system.com app.ts`
 |`--allow-env`|List|Enables access to all (if list is empty) or given environment variables|`deno run --allow-env app.ts` or `deno run --allow-env=ENV1,ENV2 app.ts`
 |`--allow-run`|List|Enables spawing all (if list is empty) or given child processes|`deno run --allow-run app.ts` or `deno run --allow-run=cat,ls,deno app.ts`
@@ -240,33 +294,45 @@ Deno runs in a sandboxed environment. Unless explicitly enabled, there is no fil
 deno run a.ts -a 1 -b 2 -c d -e -f -g
 //["-a", "1",  "-b", "2",  "-c", "d", "-e", "-f", "-g"]
 ```
-- Use standard library's `flags` module to parse command-line args into usable format
+- Use standard library's `flags` module's `parse` function to parse command-line args into usable format (uncategorized args go into `_`)
 ```ts
-import { parse } from "https://deno.land/std@$STD_VERSION/flags/mod.ts";
+import { parse } from "https://deno.land/std/flags/mod.ts";
 parse(Deno.args);
-//deno run a.ts -a 1 -b 2 -c d -e -f -g
-//{ _: [], a: 1, b: 2, c: "d", e: true, f: true, g: true }
+//deno run a.ts -a 1 -b 2 -c d -e -f -g abcd x y z 1 2 4
+//{ _: [ "x", "y", "z", 1, 2, 4 ], a: 1, b: 2, c: "d", e: true, f: true, g: "abcd" }
 ```
 
 ## Environment variables
-- Use `Deno.env` object's functions to `get`(get single env), `toObject`(get all envs), `delete` (remove an env), and `set` (set an env) the environment variables:
+`Deno.env` contains functions to get, set, and delete environment variables. 
+
+- Use `Deno.env.get` to get a single environment variable
 ```ts
 Deno.env.get('ENV1'); //VAR1
+Deno.env.get('ENV999'); //undefined
+```
+- Use `Deno.env.toObject` to get all the environment variables in an object
+```ts
+Deno.env.toObject();
+////{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... ....ENV1: "VAR2"}
+```
+- Use `Deno.env.set` to set an environment variable (overwritten if it exists)
+```ts
 Deno.env.set('ENV1', 'VAR2');
 Deno.env.set('ENV3', 'VAR3');
+```
+- Use `Deno.env.delete` to delete an environment variable
+```ts
 Deno.env.delete('ENV2');
-Deno.env.toObject();
-//{NVM_DIR: "/Users/mayankc/.nvm", XPC_SERVICE_NAME: "0", .... ....ENV1: "VAR2"}
 ```
 
 ## Reader, Writer, Seeker, and Closer
-Any resource in Deno can implement either of the available standard interfaces depending on the type of resource. This way resources can be accessed through generic methods.
+Any resource in Deno can implement some or all of the available standard interfaces (it depends on the type of resource). This way resources can be accessed/modified through generic functions.
 
-|Type|Functionality  |Methods|
+|Type|Functionality  |Functions|
 |--|--|--|
 |Readers  |These get data from the resource  |`read` and `readSync`
 |Writers|These write data into the resource|`write` and `writeSync`
-|Seekers|These support positioning of read pointer for the next read operation|`seek` and `seekSync`
+|Seekers|These support positioning of cursor for the next read operation|`seek` and `seekSync`
 |Closer|Close the resource|`close`
 
 Here are some common resources with their supported interfaces:
@@ -318,7 +384,7 @@ Deno.close(Deno.stdin.rid); //no more input needed
 
 
 ## Built-in resources
-Deno treats files, streams, sockets, etc. as resources. When a file is opened, or a socket is opened, a resource id (`number`) is allocated. Deno comes with three built-in resources (created and available by default):
+Deno treats files, streams, sockets, etc. as resources. When a resource is opened (like file or socket), a unique resource id (`number`) is allocated. Deno comes with three built-in resources (created and available by default):
 
 |Resource|Rid|Type|
 |--|--|--|
@@ -337,8 +403,8 @@ await Deno.stdin.read(buf); //reads input till user presses enter
 
 ## File ops
 Deno supports two types of file operations:
-- __Low level__: User takes care of opening, reading, writing, seeking, and closing the file
-- __High level__: User reads or writes the file directly (Deno takes care of opening, closing, seeking, etc.)
+- __Low level__: User takes care of opening, reading, writing, seeking, and closing the file (Useful in reading big files)
+- __High level__: User reads or writes the entire file directly (Deno takes care of opening, closing, seeking, etc.)
 
 Here are the file ops, both low-level and high-level:
 
@@ -346,7 +412,7 @@ Here are the file ops, both low-level and high-level:
 ```ts
 const file=await Deno.open('/var/tmp/a.txt');
 ```
-- Use `Deno.create/Deno.createSync` to create a file if it doesn't exists or truncates if it exists, opens it, and get a file object
+- Use `Deno.create/Deno.createSync` to create a file if it doesn't exists or truncates if it exists, open it, and get a file object
 ```ts
 const file=await Deno.create('/var/tmp/a.txt');
 ```
@@ -356,7 +422,7 @@ const file=await Deno.open('/var/tmp/a.txt');
 const buf=new Uint8Array(1000);
 await file.read(buf); //or Deno.read(file.rid, data)
 ```
-- Use `write/writeSync` to write a block of data into the opened file starting at the cursor position
+- Use `write/writeSync` to write a block of data into the opened file starting at the current cursor position
 ```ts
 const file=await Deno.open('/var/tmp/a.txt', {create:true, write:true});
 await file.write(new TextEncoder().encode('abcd')); //or Deno.write(file.rid, data);
@@ -487,7 +553,7 @@ await Deno.truncate('/var/tmp/myDir1/file1');
 await Deno.link("./fileXYZ.txt", "./fileABC.txt");
 //ls ./ -> ..... fileXYZ.txt fileABC.txt .....
 ```
-- Use `Deno.symlink/Deno.symlinkSync` to create a symbolic link (like pointer)
+- Use `Deno.symlink/Deno.symlinkSync` to create a symbolic link (like a pointer)
 ```ts
 //echo "123" > fileXYZ.txt
 await Deno.symlink("./fileXYZ.txt", "./fileABC.txt");
@@ -579,54 +645,53 @@ for await (const entry of walk("/var/tmp/dir1"))
 ```
 
 ## Buffer ops
-Buffer is a simple data storage that provides a way to store and retrieve data. Deno's buffer has a cursor to keep track of the next read/write operation. It can grow as needed. Usually, Buffers are initialized from a data source like a file or socket and then are read as needed. From v1.9.0, `Buffer` has been moved to the standard library. 
+Buffer is a simple data storage that provides a way to store and retrieve data. Deno's buffer has a cursor to keep track of the next read/write operation. Buffer implements both reader and writer interfaces. It can grow as needed. Usually, Buffers are initialized from a data source like a file or socket or Uint8Array and then are read as needed. From v1.9.0, `Buffer` has been recommended to be used from the standard library. 
 ```ts
 import { Buffer } from "https://deno.land/std/io/buffer.ts";
 ```
-
-- `new Buffer`: Creates a Buffer with default initial storage or takes an optional `ArrayBuffer` for initialization
+- Use `new Buffer`  to create a Buffer with default initial storage or from an optional `ArrayBuffer` for initialization
 ```ts
 const buf=new Buffer();
-const ab=new ArrayBuffer(10);
+const ab=new Uint8Array(10).fill(1);
 const buf2=new Buffer(ab);
 ```
-- `empty`: Returns true if buffer has completely read
+- Use `empty` to find out if buffer has been completely read
 ```ts
 buf.empty(); //true
 buf2.empty(); //false
 ```
-- `length`: Returns the length of unread part of the buffer
+- Use `length` to get the length of the unread part of the buffer
 ```ts
 buf.length(); //0
 buf2.length(); //8
 ```
-- `capacity`: Returns the capacity of buffer (i.e. total number of bytes present )
+- Use `capacity` to get the capacity of the buffer (i.e. total number of bytes present )
 ```ts
 buf.capacity(); //0
 buf2.capacity(); //8
 ```
-- `bytes`: Returns the complete unread portion of the buffer
+- Use `bytes` to get the complete unread portion of the buffer
 ```ts
 const buf=new Buffer(new Uint8Array(5).fill(1));
 buf.bytes();
 //Uint8Array(5) [ 1, 1, 1, 1, 1 ]
 ```
-- `read/readSync`: Takes a Uint8Array as input and reads bytes from buffer upto the length of array
+- Use `read/readSync` to reads bytes from buffer upto the length of input Uint8Array
 ```ts
 const uint8 = new Uint8Array(20).fill(1);
 const buf=new Buffer(uint8);
 const readBuf=new Uint8Array(5);
 await buf.read(readBuf); //5 bytes read
-buf.length; //15
+buf.length; //15 (unread bytes)
 ```
-- `write/writeSync`: Takes a Uint8Array and writes all the bytes into the buffer
+- Use `write/writeSync` to write an Uint8Array into the buffer
 ```ts
 const buf=new Buffer(new Uint8Array(5).fill(1));
 await buf.write(new Uint8Array(5).fill(2));
 buf.bytes();
 //Uint8Array(10) [1, 1, 1, 1, 1, 2, 2, 2, 2, 2]
 ```
-- `readFrom/readFromSync`: Reads all the data from a `reader` and saves it into the buffer
+- Use `readFrom/readFromSync` to read all the data from a `reader` and saves it into the buffer
 ```ts
 const file=await Deno.open('/var/tmp/child.txt');
 const buf=new Buffer();
@@ -636,25 +701,25 @@ buf.bytes();
 ```
 
 ## ReadAll, WriteAll, and Iter
-`readAll`, `writeAll`, and `iter` are three very commonly used functions in Deno. From v1.9.0, these functions have been moved to the standard library.
+`readAll`, `writeAll`, and `iter` are three very commonly used functions in Deno. From v1.9.0, these functions have been recommended to be used from the standard library.
 
 ```ts
 import { readAll, writeAll, iter } from "https://deno.land/std/io/util.ts";
 ```
 
-- `readAll/readAllSync`: Reads everything from a reader and returns in a Uint8Array
+- Use `readAll/readAllSync` to read everything from a reader (returns in an Uint8Array)
 ```ts
 const file=await Deno.open('/var/tmp/child.txt');
 const data=await readAll(file);
 //Uint8Array(12) [104, 101, 108, 108, 111,  32, 119, 111, 114, 108, 100,  10]
 ```
-- `writeAll/writeAllSync`: Writes everything present in Uint8Array to the writer
+- Use `writeAll/writeAllSync` to write everything present in an Uint8Array to the writer
 ```ts
 const file=await Deno.open('/var/tmp/child.txt', {write: true});
 await writeAll(file, new Uint8Array(5).fill(65));
 //cat /var/tmp/child.txt -> AAAAA world
 ```
-- `iter/iterSync`: Create an asynchronous (or synchronous) iterator for a given reader. It reads in chunks with a default size unless specified in options.
+- Use `iter/iterSync` to create an asynchronous (or synchronous) iterator for a given reader. It reads in chunks with a default size unless specified in options.
 ```ts
 const file=await Deno.open('/var/tmp/child.txt');
 for await(const c of iter(file))
@@ -672,19 +737,19 @@ Deno supports HTTP, TCP, UDP, and WebSocket client/servers. Some of the ops are 
 - Use `fetch` to fetch data through HTTP (aka HTTP client)
 ```ts
 const res=await fetch("https://localhost:3000", {
-    body: JSON.stringify({name: 'Mayank'})
+    body: JSON.stringify({name: 'First Last'})
 });
 if(res.ok) {
-    await res.text(); //String -> {"name":"Mayank"}
-    await res.json(); //JSON object -> { name: "Mayank" }
-    await res.formData(); //FormData -> FormData { [Symbol(data)]: [ [ "name", "Mayank" ] ] }
+    await res.text(); //String -> {"name":"First Last"}
+    await res.json(); //JSON object -> { name: "First Last" }
+    await res.formData(); //FormData -> FormData { [Symbol(data)]: [ [ "name", "First Last" ] ] }
 }
 ```
-- Use `Deno.listen/Deno.listenTls` to create a low-level TCP server (For HTTP servers,  use `serve/serveTls` instead)
+- Use `Deno.listen/Deno.listenTls` to create a TCP server (For HTTP servers,  use `serve/serveTls` instead)
 ```ts
 const listener = Deno.listen({ hostname: "127.0.0.1", port: 5566 });
 const conn=await listener.accept();
-await Deno.copy(conn, conn); //conn is both reader and writer
+await Deno.copy(conn, conn); //echo the data back conn -> conn
 conn.close();
 listener.close();
 //--
@@ -726,7 +791,7 @@ await Deno.resolveDns("www.facebook.com", "CNAME"); //[ "star-mini.c10r.facebook
 ```
 - Use standard library's `ws` module to create a websocket server. Websocket client follows the web standards.
 ```ts
-//ECHO_WS_SERVER.ts
+//echoServer.ts
 import { serve } from "https://deno.land/std/http/server.ts";
 import { acceptWebSocket, isWebSocketCloseEvent } from "https://deno.land/std/ws/mod.ts";
 for await (const req of serve(":5000")) {
@@ -738,7 +803,9 @@ for await (const req of serve(":5000")) {
         ws.send(e as string|Uint8Array); //e: SAMPLE DATA
     }
 }
-//ECHO_CLIENT.TS
+```
+```ts
+//echoClient.ts
 const ws=new WebSocket('ws://localhost:5000');
 ws.onopen=()=>ws.send("SAMPLE DATA");
 ws.onmessage=(m)=>ws.close(); //m.data: SAMPLE DATA
@@ -809,7 +876,7 @@ console.log(path.toFileUrl("/data/a/b/c.txt").toString()); //file:///data/a/b/c.
 
 ## System info
 > A lot of the system functions are under unstable umbrella
-- Use `Deno.hostname` to get name of the host where Deno is running
+- Use `Deno.hostname` to get the name of the host where Deno is running
 ```ts
 Deno.hostname(); //Mayanks-MacBook-Pro.local
 ```
@@ -821,7 +888,7 @@ Deno.consoleSize(); //{ columns: 67, rows: 15 }
 ```ts
 Deno.loadavg(); //[ 1.92919921875, 2.50830078125, 2.3837890625 ]
 ```
-- Use `Deno.osRelease` to get details about the operating system
+- Use `Deno.osRelease` to get details about the operating system version
 ```ts
 Deno.osRelease(); //19.6.0 (on mac)
 ```
@@ -843,14 +910,22 @@ new TextEncoder().encode('ABCD');
 new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ]));
 //ABCD
 ```
-- Use standard library's `encoding/base64` module to encode and decode base64 data
+- Use standard library's `encoding/base64` module's `encode/decode` functions to encode and decode base64 data
 ```ts
 import { decode, encode } from "https://deno.land/std/encoding/base64.ts";
 const e=encode("ABCDE");
 const d=decode(e); //or, new TextDecoder().decode(decode(e)); to get string
 //e: QUJDREU=     d: Uint8Array(5) [ 65, 66, 67, 68, 69 ]
 ```
-- Use standard library's `encoding/hex` module to encode and decode hex data
+- Use standard library's `encoding/base64url` module's `encode/decode` functions to encode and decode base64 URLs
+```ts
+import { encode, decode } from "https://deno.land/std/encoding/base64url.ts";
+const e=encode(new TextEncoder().encode("https://abc.def.com/api/v1/a/b?x=1&y=2&z"));
+const d=new TextDecoder().decode(decode(e));
+//e: aHR0cHM6Ly9hYmMuZGVmLmNvbS9hcGkvdjEvYS9iP3g9MSZ5PTImeg
+//d: https://abc.def.com/api/v1/a/b?x=1&y=2&z
+```
+- Use standard library's `encoding/hex` module's `encode/decode` functions to encode and decode hex data
 ```ts
 import { encode, encodeToString, decode, decodeString } from "https://deno.land/std/encoding/hex.ts";
 const data=new TextEncoder().encode("ABCD1234");
@@ -926,7 +1001,7 @@ Deno.kill(pid, Deno.Signal.SIGINT);
 
 
 ## Child Process
-`Deno.run()` can be used to start a child process to possibly run a shell command, script, another Deno program, etc. While creating the child process, the input, output, and stderr of the child process can be set to: 
+`Deno.run()` can be used to start a child process to run a shell command, script, another Deno program, etc. While creating the child process, the input, output, and stderr of the child process can be set to: 
 
 - `none`: Ignore
 - `pipe`: Redirect to the parent process
@@ -935,20 +1010,23 @@ Deno.kill(pid, Deno.Signal.SIGINT);
 
 The `Deno.run()` function call returns a process object. This process object can be used to check the status of the child process, get piped output, and terminate it if needed. The process object has a `status` function that would resolve when the child process is done.
 
+- Use `Deno.run` to create a child process (stdin/out/err are inherited as they are unspecified)
 ```ts
 const p=Deno.run({cmd: ['echo', 'hello' , 'world']});
 await p.status();
 //output on console: hello world
 ```
+- Use `Deno.run` to create a child process and pipe the streams (stdin/out/err) to the parent
 ```ts
 const p=Deno.run({cmd: ['echo', 'hello' , 'world'], stdout: 'piped', stderr: 'piped'});
 await p.status();
 const [s, e] = await Promise.all([
-	p.output(),
+    p.output(),
     p.stderrOutput()]);
 }
 //s: hello world, e: undefined
 ```
+- Use `Deno.run` to create a child process and redirect streams (out/err) to a file
 ```ts
 const file=await Deno.open("/var/tmp/child.txt", {create: true, write: true});
 const p=Deno.run({cmd: ['echo', 'hello' , 'world'], stdout: file.rid, stderr: file.rid});
@@ -956,6 +1034,7 @@ await p.status();
 file.close();
 //cat /var/tmp/child.txt -> hello world
 ```
+- Use `kill` to terminate a child process (say it's not responding) 
 ```ts
 const p=Deno.run({cmd: 'infiniteLoop'});
 setTimeout(() => p.kill(9), 5000);
@@ -964,23 +1043,27 @@ setTimeout(() => p.kill(9), 5000);
 ## User interaction
 If Deno is running as an interactive shell, the functions `alert`, `prompt`, and `confirm` can be used to print a message to the user or take input from the user. All three functions are blocking till the user presses enter.
 
-- `alert`: Prints a message on the console, and waits for the user to press enter
-- `prompt`: Print a message on the console with an optional default value, and waits for the user to give input or press enter
-- `confirm`: Prints a message on console with y/N, and waits for the user to give input or press enter (only `y` and `Y` is returned as `true`, otherwise `false`)
-
+- Use `alert` to print a message on the console, and wait for the user to press enter
 ```ts
 alert('This is a message');
 //This is a message [Enter]
+```
+- Use `prompt` to print a message on the console with an optional default value, and wait for the user to give input or press enter
+```ts
 const val=prompt('Input required');
 //Input required 
 const val2=prompt('Input required', '127.0.0.1'); //with default value
-//Input required [127.0.0.1] 
+//Input required [127.0.0.1]
+```
+- Use `confirm` to print a message on console with y/N, and wait for the user to give input or press enter (only `y` and `Y` is returned as `true`, otherwise `false`)
+
+```ts
 const val3=confirm('Are you sure?');
 //Are you sure? [y/N]
 ```
 
 ## Utilities
-- Use standard library's `tar` utlity to create/untar tar files
+- Use standard library's `tar` module to create tar files
 ```ts
 import { Tar } from "https://deno.land/std/archive/tar.ts";
 import { Buffer } from "https://deno.land/std/io/buffer.ts";
@@ -1016,7 +1099,7 @@ log.warning(5000); //WARNING 5000
 log.error({data: {err: "MESSAGE"}}); //ERROR {"data":{"err":"MESSAGE"}}
 log.critical("ABCD"); //CRITICAL ABCD
 ```
-- Use `RotatingFileHandler` to direct log messages to files that would rotate after reaching a maximum size and maintains a given number of rotating files (aka backups)
+- Use `RotatingFileHandler` to direct log messages to files that would rotate after reaching a maximum size and maintains a given number of backups
 ```ts
 import * as log from "https://deno.land/std/log/mod.ts";
 await log.setup({
@@ -1071,6 +1154,76 @@ Deno.metrics();
 }
 ```
 
+## Unit testing
+Deno's toolchain comes with a simple unit testing framework that can be executed through `deno test` command. It runs all the files that match `*test.ts`. 
+
+- Use `Deno.test` with a test name and a test function to run
+```ts
+import { assert } from "https://deno.land/std/testing/asserts.ts";
+Deno.test("first test", () => {
+    assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
+});
+```
+- Use `ignore` to skip selective test cases matching a condition
+```ts
+Deno.test({ name: "second test",
+            ignore: true, //or add some condition
+            fn: () => {
+                assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
+            }
+});
+```
+- Use `only` to run only selective tests matching a condition
+```ts
+Deno.test({ name: "third test",
+            only: true, //or add some condition
+            fn: () => {
+                assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
+            }
+});
+```
+- Use `async` functions to run tests involving async code
+```ts
+Deno.test("fourth test", async () => {
+    const res=await fetch("https://deno.land");
+    const resText=await res.text();
+    assert(resText.length > 0);
+});
+```
+
+```shell
+deno test --allow-all
+running 2 tests
+test first test ... ok (1ms)
+test second test ... ignored
+test third test ... ok (1ms)
+test fourth test ... ok (116ms)
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out (128ms)
+```
+- Use asserts in the test function to check the data
+```ts
+import * as asserts from "https://deno.land/std/testing/asserts.ts";
+```
+
+|Assert function|Use  |
+|--|--|
+|`assert`  |Checks if the given expression is true
+|`assertEquals`|Checks if `actual` and `expected` are deeply equal
+|`assertNotEquals`|Checks if `actual` and `expected` are not deeply equal
+|`assertStrictEquals`|Checks if `actual` and `expected` are strictly equal
+|`assertNotStrictEquals`|Checks if `actual` and `expected` are not strictly equal
+|`assertExists`|Checks if a value is not undefined nor null
+|`assertStringIncludes`|Checks if a string contains a sub-string
+|`assertArrayIncludes`|Checks if an array contains an element
+|`assertMatch`|Checks if a string matches given regex
+|`assertNotMatch`|Check if a string doesn't match given regex
+|`assertObjectMatch`|Checks if a given object is a sub-set of another object
+|`assertThrows`|Checks if a function does throw an error
+|`assertThrowsAsync`|Checks if an async function does throw an error
+
+
+
 ## Deno specific errors
 |Error  |
 |--|
@@ -1093,39 +1246,5 @@ Deno.metrics();
 |Http
 |Busy
 |NotSupported
-
-## Unit testing
-Deno's toolchain comes with a simple unit testing framework that can be executed through `deno test` command. It runs all the files that match `*test.ts`. Use `ignore` to skip selective test cases or `only` to run only selective test cases matching a condition.
-
-```ts
-import { assert } from "https://deno.land/std/testing/asserts.ts";
-
-Deno.test("first test", () => {
-    assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
-});
-
-Deno.test("second test", async () => {
-    const res=await fetch("https://deno.land");
-    const resText=await res.text();
-    assert(resText.length > 0);
-});
-
-Deno.test({ name: "third test",
-            ignore: true, //or add some condition
-            fn: () => {
-                assert(new TextDecoder().decode(new Uint8Array([ 65, 66, 67, 68 ])) === "ABCD");
-            }
-});
-```
-
-```shell
-deno test --allow-all
-running 2 tests
-test first test ... ok (1ms)
-test second test ... ok (116ms)
-
-test result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out (118ms)
-```
-
 
 
