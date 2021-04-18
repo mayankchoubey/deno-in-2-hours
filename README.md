@@ -1,4 +1,4 @@
-![](https://github.com/mayankchoubey/deno-in-2-hours/blob/ebbba967ddd3abd2593069bc794c70ab21fbc3a8/deno%20in%202%20hours%20-%20cover.png)
+![](https://github.com/mayankchoubey/deno-in-2-hours/blob/96aee24246f2b2c74ad3d319225f2b5ccf756c21/cover-deno-in-2-hours.png)
 
 
 > Learn all about Deno in just 2 hours
