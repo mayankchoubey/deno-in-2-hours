@@ -33,8 +33,6 @@
 - [Unit testing](#unit-testing)
 - [Deno specific errors](#deno-specific-errors)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 
 ## Introduction
 Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses Google’s V8 engine and is built in Rust. Deno is a complete toolchain that ships as a single executable with no dependencies. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was generally available in May'2020. The latest release of Deno is `1.9.0`.
