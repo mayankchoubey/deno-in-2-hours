@@ -23,7 +23,9 @@
 - [Paths](#paths)
 - [System info](#system-info)
 - [Encoding and decoding](#encoding-and-decoding)
-- [Hash, UUID, and random values](#hash-uuid-and-random-values)
+- [Hash and UUID](#hash-and-uuid)
+- [Web Crypto APIs](#web-crypto-apis)
+- [Web Storage APIs](#web-storage-apis)
 - [Process ops](#process-ops)
 - [Child Process](#child-process)
 - [User interaction](#user-interaction)
@@ -35,7 +37,12 @@
 
 
 ## Introduction
-Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses Google’s V8 engine and is built in Rust. Deno is a complete toolchain that ships as a single executable with no dependencies. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was generally available in May'2020. The latest release of Deno is `1.9.0`.
+Deno is a simple, modern, and secure runtime for JavaScript and TypeScript applications that uses Google’s V8 engine and is built in Rust. Deno is a complete toolchain that ships as a single executable with no dependencies. It runs in a sandbox and supports Typescript out the box. Deno `1.0` was generally available in May'2020. This guide was written to match version `1.11.1` of Deno.
+
+## Releases
+Deno has an aggressive release schedule. There is a minor release almost every week. Every release contains a large number of features and bug fixes.
+
+- Visit https://github.com/denoland/deno/releases to get detailed information on Deno's releases
 
 ## Installation
 Deno installs as a single executable with no dependencies. It can be easily installed either directly or using package managers on all the supported platforms: Mac, Linux, and Windows.
@@ -254,7 +261,7 @@ import { path, doze, bodyparser } from "./deps.ts";
 - Use `Deno.version` object to get the versions of Deno, Typescript, and V8
 ```ts
 Deno.version;
-//{ deno: "1.9.0", v8: "9.1.269.5", typescript: "4.2.2" }
+//{ deno: "1.11.1", v8: "9.1.269.35", typescript: "4.3.2" }
 ```
 - Use `Deno.build` to get information about the Deno build being used
 ```ts
@@ -771,7 +778,7 @@ const n=await conn.read(buf);
 //--
 const conn=await Deno.connectTls({hostname: 'localhost', port: 4544, certFile: './server.crt' });
 ```
-- Use `Deno.serve/Deno.serveTls` to create HTTP servers without or with TLS
+- Use `Deno.serve/Deno.serveTls` to create a (scripted) HTTP server without or with TLS
 ```ts
 import { serve } from "https://deno.land/std/http/server.ts";
 for await (const req of serve({port:3000}))
@@ -780,6 +787,17 @@ for await (const req of serve({port:3000}))
 import { serveTLS } from "https://deno.land/std/http/server.ts";
 for await (const req of serveTLS({port:3000, certFile: "./c.crt", keyFile: "./k.key"}))
     req; //do something with request
+```
+- Use `Deno.serveHttp` to create a native (hyper) HTTP server. The native HTTP server takes any TCP connection and serves HTTP over it. The native HTTP server supports web's standard Request & Response objects.
+```ts
+const listener = Deno.listen({port: 5000});
+for await(const conn of listener)
+    handleNewConnection(conn);
+    
+async function handleNewConnection(conn: Deno.Conn) {
+    for await(const req of Deno.serveHttp(conn))
+        req.respondWith(new Response());
+}
 ```
 - Use `Deno.resolveDns` to fetch a particular type of record (`A`/`AAAA`/`ANAME`/`CNAME`/`SRV`/`PTR`/`MX`/`TXT`) from the DNS
 ```ts
@@ -933,7 +951,7 @@ const g=decode(f); //g: Uint8Array(8) [65, 66, 67, 68, 49, 50, 51, 52]
 const h=new TextDecoder().decode(decodeString(e)); //h: ABCD1234
 ```
 
-## Hash, UUID, and random values
+## Hash and UUID
 - Use standard library's `hash` module's `createHash, update, toString` functions to create a hash of a given string
 ```ts
 import { createHash } from "https://deno.land/std/hash/mod.ts";
@@ -951,7 +969,12 @@ uuid.v5.generate({value: "Hello, World", namespace: "1b671a64-40d5-491e-99b0-da0
 uuid.v1.validate("770bb8bb-1caf-4f24-a473-e3ef83e791c8"); //false
 uuid.v4.validate("770bb8bb-1caf-4f24-a473-e3ef83e791c8"); //true
 ```
-- Use `crypto.getRandomValues` function to generate cryptographically strong random numbers. This function fills the input array with 8/16/32 bit random numbers.
+
+
+### Web Crypto APIs
+Web crypto APIs implement hashing functions and a random number generator following web standards.
+
+- Use `crypto.getRandomValues` function to generate cryptographically strong random numbers. This function fills the input array with 8/16/32 bit cryptographicall strong random numbers.
 ```ts
 const rv=new Uint8Array(5);
 crypto.getRandomValues(rv);
@@ -962,6 +985,58 @@ crypto.getRandomValues(rv);
 const rv=new Uint32Array(5);
 crypto.getRandomValues(rv);
 //rv: Uint32Array(5) [ 1947225378, 753635950, 415007456, 3202401173, 1941195170 ]
+```
+- Use `crypto.randomUUID` to generate a V4 UUID
+```ts
+crypto.randomUUID(); //49d25949-7045-4bdd-a17b-a5b4e3f16be1
+```
+- Use `crypto.subtle.digest` to generate a secure hash (SHA). The supported algorithms are: SHA-1, SHA-256, SHA-384, and SHA-512.
+```ts
+const i=Uint8Array.from({length: 50}, () => Math.floor(Math.random() * 50));
+new Uint8Array(await crypto.subtle.digest('sha-1', i));
+//Uint8Array(20) [87, 55, 240, 228, 250, 122, 3, 204, 85, 72, 125,  85, 159, 198, 81, 239, 35, 254, 77, 27]
+new Uint8Array(await crypto.subtle.digest('sha-256', i));
+//Uint8Array(32) [197, 138, 201, 31, 201, 218, 169, 117, 12, 31,  16, 116, 230, 169, 44, 154, 108, 120, 28, 123, 64, 183, 162, 129, 196, 82, 114, 116, 245, 211, 116, 122]
+new Uint8Array(await crypto.subtle.digest('sha-384', i));
+//Uint8Array(48) [72, 183, 141, 243, 202, 146, 234, 12, 199, 105, 108, 145, 37, 170,  47, 121, 203, 166, 4, 170, 33, 1, 13, 33, 23, 243, 148, 58, 137, 107, 243, 74, 127, 49, 200, 62, 30,  62,  54,  63, 167, 251, 139, 102, 120, 17, 3, 7]
+new Uint8Array(await crypto.subtle.digest('sha-512', i));
+//Uint8Array(64) [114, 18, 60, 52, 57, 109, 160, 248, 102, 239, 118, 250, 222, 76, 187, 139, 250, 239, 232, 179, 31, 144, 192, 174, 39,  73, 17, 211, 237, 236,  93, 143, 12, 33, 234, 172, 70, 22, 96, 110, 120, 151, 207, 228, 250, 96, 114, 88, 158, 63, 122, 120, 198, 210, 221, 118, 28, 19, 99, 162, 145, 236, 182, 184]
+```
+- Use standard library's hex module's `encodeToString` to convert the raw output of `crypto.subtle.digest` to a string
+```ts
+import { encodeToString } from "https://deno.land/std/encoding/hex.ts";
+
+encodeToString(new Uint8Array(await crypto.subtle.digest('sha-1', i)));
+//df3ed451c9ea86ab10ff7583874ad1bd4813c3e0
+encodeToString(new Uint8Array(await crypto.subtle.digest('sha-256', i)));
+//c58ac91fc9daa9750c1f1074e6a92c9a6c781c7b40b7a281c4527274f5d3747a
+encodeToString(new Uint8Array(await crypto.subtle.digest('sha-384', i)));
+//48b78df3ca92ea0cc7696c9125aa2f79cba604aa21010d2117f3943a896bf34a7f31c83e1e3e363fa7fb8b6678110307
+encodeToString(new Uint8Array(await crypto.subtle.digest('sha-512', i)));
+//72123c34396da0f866ef76fade4cbb8bfaefe8b31f90c0ae274911d3edec5d8f0c21eaac4616606e7897cfe4fa6072589e3f7a78c6d2dd761c1363a291ecb6b8
+```
+
+
+### Web Storage APIs
+Web storage APIs provide temporary and persistent storage of key-value pairs. Deno uses sqlitedb to store key-value pairs in memory (sessionStorage) or at disk (localStorage). SessionStorage's life is with process, while localStorage persists across process restarts.
+- Use `sessionStorage.getItem`, `sessionStorage.setItem`, and `sessionStorage.removeItem` to get, set, and remove a KV from sessionStorage (temporary)
+```ts
+sessionStorage.setItem('A', 'B');
+sessionStorage.setItem('F', JSON.stringify({a:1, b: true}));
+sessionStorage.length; //2
+sessionStorage.getItem('A'); //B
+sessionStorage.getItem('F'); //{"a":1,"b":true}
+sessionStorage.removeItem('A');
+sessionStorage.removeItem('F');
+```
+- Use `localStorage.getItem`, `localStorage.setItem`, and `localStorage.removeItem` to get, set, and remove a KV from localStorage (persistent)
+```ts
+localStorage.setItem(`${Date.now()}`, 'B');
+localStorage.length; //1
+localStorage.key(0); //1620969933244
+localStorage.setItem('A', 'B');
+localStorage.getItem('A'); //B
+localStorage.removeItem('A');
 ```
 
 ## Process ops
